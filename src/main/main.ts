@@ -1,14 +1,8 @@
 import { app, BrowserWindow, ipcMain, Menu, shell, MenuItemConstructorOptions } from "electron";
 import * as path from "path";
-import { WeatherService } from "../shared/services/WeatherService";
-import { DatabaseService } from "../shared/services/DatabaseService";
 
 // 保持对窗口对象的全局引用，如果不这样做，当JavaScript对象被垃圾回收时，窗口将自动关闭
 let mainWindow: BrowserWindow | null = null;
-
-// 服务实例
-let weatherService: WeatherService;
-let databaseService: DatabaseService;
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -22,7 +16,6 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false,
       preload: path.join(__dirname, "preload.js"),
     },
     icon: path.join(__dirname, "../assets/icon.png"),
@@ -65,12 +58,6 @@ function createWindow(): void {
 
 // 当Electron完成初始化并准备创建浏览器窗口时调用此方法
 app.whenReady().then(async () => {
-  // 初始化服务
-  databaseService = new DatabaseService();
-  await databaseService.initialize();
-
-  weatherService = new WeatherService();
-
   createWindow();
 
   // 设置应用菜单
@@ -95,37 +82,54 @@ app.on("window-all-closed", () => {
 // 在此文件中，您可以包含应用程序特定的主进程代码的其余部分
 // 您也可以将它们放在单独的文件中并在此处require它们
 
-// IPC处理程序
-ipcMain.handle("get-weather", async (event, cityName: string) => {
+// IPC处理程序 - 基础实现
+ipcMain.handle("get-weather", async (_event, cityName: string) => {
   try {
-    return await weatherService.getCurrentWeather(cityName);
+    // 模拟天气数据
+    return {
+      city: cityName,
+      temperature: 22,
+      condition: "多云",
+      humidity: 65,
+      windSpeed: 12,
+      precipitation: 30
+    };
   } catch (error) {
     console.error("获取天气数据失败:", error);
     throw error;
   }
 });
 
-ipcMain.handle("get-forecast", async (event, cityName: string) => {
+ipcMain.handle("get-forecast", async (_event, _cityName: string) => {
   try {
-    return await weatherService.getForecast(cityName);
+    // 模拟预报数据
+    return [
+      { date: "今天", temperature: 22, condition: "多云" },
+      { date: "明天", temperature: 25, condition: "晴天" },
+      { date: "后天", temperature: 20, condition: "小雨" }
+    ];
   } catch (error) {
     console.error("获取天气预报失败:", error);
     throw error;
   }
 });
 
-ipcMain.handle("search-cities", async (event, query: string) => {
+ipcMain.handle("search-cities", async (_event, query: string) => {
   try {
-    return await weatherService.searchCities(query);
+    // 模拟城市搜索
+    const cities = ["北京", "上海", "广州", "深圳", "杭州"];
+    return cities.filter(city => city.includes(query));
   } catch (error) {
     console.error("搜索城市失败:", error);
     throw error;
   }
 });
 
-ipcMain.handle("save-favorite-city", async (event, cityData: any) => {
+ipcMain.handle("save-favorite-city", async (_event, cityData: any) => {
   try {
-    return await databaseService.saveFavoriteCity(cityData);
+    // 模拟保存收藏城市
+    console.log("保存收藏城市:", cityData);
+    return { success: true };
   } catch (error) {
     console.error("保存收藏城市失败:", error);
     throw error;
@@ -134,7 +138,8 @@ ipcMain.handle("save-favorite-city", async (event, cityData: any) => {
 
 ipcMain.handle("get-favorite-cities", async () => {
   try {
-    return await databaseService.getFavoriteCities();
+    // 模拟获取收藏城市
+    return ["北京", "上海"];
   } catch (error) {
     console.error("获取收藏城市失败:", error);
     throw error;
@@ -143,16 +148,23 @@ ipcMain.handle("get-favorite-cities", async () => {
 
 ipcMain.handle("get-settings", async () => {
   try {
-    return await databaseService.getSettings();
+    // 模拟获取设置
+    return {
+      temperatureUnit: "celsius",
+      autoRefresh: true,
+      notifications: true
+    };
   } catch (error) {
     console.error("获取设置失败:", error);
     throw error;
   }
 });
 
-ipcMain.handle("save-settings", async (event, settings: any) => {
+ipcMain.handle("save-settings", async (_event, settings: any) => {
   try {
-    return await databaseService.saveSettings(settings);
+    // 模拟保存设置
+    console.log("保存设置:", settings);
+    return { success: true };
   } catch (error) {
     console.error("保存设置失败:", error);
     throw error;
