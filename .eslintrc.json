@@ -3,8 +3,7 @@
     "browser": true,
     "es2021": true,
     "node": true,
-    "jest": true,
-    "vitest-globals/env": true
+    "jest": true
   },
   "extends": [
     "eslint:recommended",
@@ -29,7 +28,15 @@
   "globals": {
     "__APP_VERSION__": "readonly",
     "__BUILD_TIME__": "readonly",
-    "vi": "readonly"
+    "vi": "readonly",
+    "describe": "readonly",
+    "it": "readonly",
+    "test": "readonly",
+    "expect": "readonly",
+    "beforeEach": "readonly",
+    "afterEach": "readonly",
+    "beforeAll": "readonly",
+    "afterAll": "readonly"
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
