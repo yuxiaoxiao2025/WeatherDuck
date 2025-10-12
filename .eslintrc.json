@@ -64,6 +64,10 @@
     "node_modules",
     "coverage",
     "*.config.js",
-    "*.config.ts"
+    "*.config.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

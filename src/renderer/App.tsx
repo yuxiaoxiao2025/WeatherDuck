@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sun } from "lucide-react";
 import { WeatherDisplay } from "./components/WeatherDisplay";
 import { CitySearch } from "./components/CitySearch";
 import { FavoriteCities } from "./components/FavoriteCities";
@@ -9,7 +10,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { WeatherProvider } from "./contexts/WeatherContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { Sidebar } from "./components/Sidebar";
-// 图标将在具体组件中按需导入
 import "./App.css";
 
 // 主应用组件

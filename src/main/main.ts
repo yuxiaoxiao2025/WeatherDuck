@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, shell, MenuItemConstructorOptions } from "electron";
 import * as path from "path";
 import { WeatherService } from "../shared/services/WeatherService";
 import { DatabaseService } from "../shared/services/DatabaseService";
@@ -160,7 +160,7 @@ ipcMain.handle("save-settings", async (event, settings: any) => {
 });
 
 function createMenu(): void {
-  const template: Electron.MenuItemConstructorOptions[] = [
+  const template: MenuItemConstructorOptions[] = [
     {
       label: "文件",
       submenu: [
