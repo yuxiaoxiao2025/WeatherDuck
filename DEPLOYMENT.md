@@ -1,8 +1,87 @@
 # 天气鸭预览环境部署指南
 
-## 概述
+本文档详细说明了天气鸭项目的预览环境部署配置和流程。
 
-本文档详细说明了天气鸭项目预览环境的部署配置，包括GitHub Actions CI/CD流程、环境变量配置、以及各种部署平台的设置要求。
+## 🚀 部署概览
+
+天气鸭项目采用混合部署策略，支持多种部署方式：
+
+- **Web预览版**: 部署到 Vercel（推荐）
+- **桌面应用**: GitHub Actions 自动构建
+- **容器化部署**: Docker + 云服务器（可选）
+
+## 🚀 快速开始
+
+### 1. 配置 GitHub Secrets
+
+在 GitHub 仓库设置中添加以下 Secrets：
+
+```
+VERCEL_TOKEN=your_vercel_token
+VERCEL_ORG_ID=your_vercel_org_id  
+VERCEL_PROJECT_ID=your_vercel_project_id
+```
+
+详细配置步骤请参考 <mcfile name="GITHUB_SECRETS_SETUP.md" path="e:\trae\WeatherDuck\GITHUB_SECRETS_SETUP.md"></mcfile>
+
+### 2. 配置环境变量
+
+复制 <mcfile name=".env.example" path="e:\trae\WeatherDuck\.env.example"></mcfile> 为 `.env.local` 并配置：
+
+```bash
+# 和风天气API密钥
+VITE_QWEATHER_API_KEY=your_api_key_here
+
+# 应用环境
+VITE_APP_ENV=staging
+VITE_ENABLE_PWA=true
+```
+
+### 3. 推送代码触发部署
+
+```bash
+git push origin main
+```
+
+### 4. 查看部署结果
+
+- 检查 GitHub Actions 运行状态
+- 访问 Vercel 预览链接: `https://weather-duck-preview.vercel.app`
+- 验证应用功能正常
+
+### 5. 本地验证构建
+
+```bash
+# 安装依赖
+npm install
+
+# 构建Web预览版
+npm run build:web-preview
+
+# 本地预览
+npm run preview:web
+```
+
+## 📋 GitHub Actions CI/CD
+
+### 工作流触发条件
+- 推送到 `main` 或 `develop` 分支
+- 手动触发 (workflow_dispatch)
+
+### 构建流程
+1. **代码检查**: ESLint + TypeScript 类型检查
+2. **测试执行**: 单元测试 + 集成测试
+3. **Web构建**: 生成 `dist-web` 目录
+4. **Vercel部署**: 自动部署到预览环境
+5. **部署验证**: 自动检查部署状态
+6. **桌面构建**: 多平台应用打包（可选）
+7. **Docker构建**: 容器镜像构建（可选）
+
+### 最新优化
+- ✅ 添加部署状态验证
+- ✅ 改进错误处理和通知
+- ✅ 优化构建缓存策略
+- ✅ 增强安全配置
 
 ## 部署架构
 
@@ -354,14 +433,51 @@ add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 - **构建缓存**: 利用GitHub Actions缓存
 - **CDN**: 静态资源缓存优化
 
-## 联系支持
+## 📚 相关文档
 
-如果在部署过程中遇到问题，请：
+- <mcfile name="GITHUB_SECRETS_SETUP.md" path="e:\trae\WeatherDuck\GITHUB_SECRETS_SETUP.md"></mcfile> - GitHub Secrets 详细配置指南
+- <mcfile name="PLATFORM_DEPLOYMENT_GUIDE.md" path="e:\trae\WeatherDuck\PLATFORM_DEPLOYMENT_GUIDE.md"></mcfile> - 多平台部署方案对比
+- <mcfile name=".env.example" path="e:\trae\WeatherDuck\.env.example"></mcfile> - 环境变量配置示例
+- <mcfile name="vercel.json" path="e:\trae\WeatherDuck\vercel.json"></mcfile> - Vercel 部署配置
+- <mcfile name="deploy-staging.yml" path="e:\trae\WeatherDuck\.github\workflows\deploy-staging.yml"></mcfile> - GitHub Actions 工作流
 
-1. 查看本文档的故障排除部分
-2. 检查GitHub Issues中的相关问题
-3. 在项目仓库中创建新的Issue
-4. 联系项目维护者
+## 🎯 部署检查清单
+
+部署前请确认：
+
+- [ ] GitHub Secrets 已正确配置
+- [ ] 环境变量已设置
+- [ ] 和风天气API密钥有效
+- [ ] 本地构建测试通过
+- [ ] 代码已推送到正确分支
+
+部署后请验证：
+
+- [ ] GitHub Actions 工作流成功运行
+- [ ] Vercel 部署状态正常
+- [ ] 预览环境可正常访问
+- [ ] API调用功能正常
+- [ ] PWA功能正常工作
+
+## 📞 技术支持
+
+如果在部署过程中遇到问题：
+
+1. 检查 GitHub Actions 日志
+2. 查看 Vercel 部署日志  
+3. 确认环境变量配置
+4. 参考故障排除指南
+5. 在项目 Issues 中提问
+
+---
+
+**注意**: 请确保所有敏感信息都通过 GitHub Secrets 配置，不要在代码中硬编码 API 密钥等敏感数据。
+
+## 🎉 部署完成
+
+恭喜！您已成功配置了天气鸭项目的预览环境持续部署流程。现在每次推送代码到 `main` 分支时，都会自动触发构建和部署，让项目创始人可以随时查看最新的开发进展。
+
+**预览环境访问地址**: `https://weather-duck-preview.vercel.app`
 
 ---
 

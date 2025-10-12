@@ -59,15 +59,23 @@ jobs:
           path: dist-web/
           retention-days: 7
           
-      - name: 部署到 Vercel
-        id: deploy
+      - name: Deploy to Vercel
+        id: vercel-deploy
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
           vercel-args: '--prod'
+          working-directory: ./
+      
+      - name: Verify Deployment
+        run: |
+          echo "Deployment URL: ${{ steps.vercel-deploy.outputs.preview-url }}"
+          # 等待部署完成并验证
+          sleep 30
+          curl -f ${{ steps.vercel-deploy.outputs.preview-url }} || exit 1
+          echo "✅ 预览环境部署成功！"
           
   # 构建桌面应用版本（可选）
   build-desktop-app:
@@ -118,18 +126,16 @@ jobs:
     if: always()
     
     steps:
-      - name: 部署成功通知
-        if: needs.build-web-preview.result == 'success'
+      - name: 部署通知
+        if: always()
         run: |
-          echo "🎉 预览环境部署成功！"
-          echo "📱 Web预览地址: ${{ needs.build-web-preview.outputs.preview-url }}"
-          echo "💻 桌面应用构建完成，可在Actions页面下载"
-          
-      - name: 部署失败通知
-        if: needs.build-web-preview.result == 'failure'
-        run: |
-          echo "❌ 预览环境部署失败，请检查构建日志"
-          exit 1
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "🎉 预览环境部署成功！"
+            echo "预览地址: ${{ steps.vercel-deploy.outputs.preview-url }}"
+            echo "生产地址: https://weather-duck-preview.vercel.app"
+          else
+            echo "❌ 预览环境部署失败！"
+          fi
           
   # Docker镜像构建（可选）
   build-docker-image:
