@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "@testing-library/jest-dom", "node"]
+  },
+  "include": [
+    "src-web/**/*",
+    "src/**/*"
+  ],
+  "exclude": [
+    "src-web/**/*.test.ts",
+    "src-web/**/*.test.tsx",
+    "src-web/**/*.spec.ts",
+    "src-web/**/*.spec.tsx",
+    "src-electron/**/*",
+    "src/__tests__/**/*",
+    "src/setupTests.ts",
+    "node_modules",
+    "dist",
+    "out"
+  ]
+}

@@ -2,6 +2,10 @@
 module.exports = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./src-electron/**/*.{js,ts,jsx,tsx}",
+    "./src-web/**/*.{js,ts,jsx,tsx}",
+    "./src-electron/index.html",
+    "./src-web/index.html",
     "./index.html"
   ],
   theme: {

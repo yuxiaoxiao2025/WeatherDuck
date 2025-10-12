@@ -19,10 +19,15 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@main/*": ["src/main/*"],
-      "@renderer/*": ["src/renderer/*"],
-      "@shared/*": ["src/shared/*"],
-      "@web/*": ["src/web/*"]
+      "@shared/*": ["src/*"],
+      "@electron/*": ["src-electron/*"],
+      "@electron/main/*": ["src-electron/main/*"],
+      "@web/*": ["src-web/*"],
+      "@assets/*": ["src/assets/*"],
+      "@services/*": ["src/services/*"],
+      "@types/*": ["src/types/*"],
+      "@utils/*": ["src/utils/*"],
+      "@components/*": ["src/components/*"]
     },
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -30,10 +35,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["node", "jest", "@testing-library/jest-dom"]
+    "types": ["node", "jest", "@testing-library/jest-dom", "vite/client"]
   },
   "include": [
     "src/**/*",
+    "src-electron/**/*",
+    "src-web/**/*",
     "scripts/**/*"
   ],
   "exclude": [

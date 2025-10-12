@@ -1,10 +1,17 @@
 # 天气鸭 (WeatherDuck) 🦆
 
-> 现代化的桌面天气应用，采用 Electron + React + TypeScript 技术栈
+> 现代化的双目标天气应用，支持桌面版和Web版，采用 Electron + React + TypeScript 技术栈
 
 ## 项目简介
 
-天气鸭是一款现代化的桌面天气应用，旨在为用户提供直观、美观且功能丰富的天气信息展示体验。应用集成了布谷鸟报时功能，支持多城市天气查询，并提供精美的天气动画效果。
+天气鸭是一款现代化的双目标天气应用，旨在为用户提供直观、美观且功能丰富的天气信息展示体验。应用集成了布谷鸟报时功能，支持多城市天气查询，并提供精美的天气动画效果。
+
+### 双目标架构
+
+- 🖥️ **桌面版** - 基于 Electron 的原生桌面应用
+- 🌐 **Web版** - 基于 Vite 的现代化Web应用
+- 🔄 **共享代码** - 组件、服务、类型定义完全共享
+- 📱 **响应式设计** - 适配不同屏幕尺寸和设备
 
 ### 核心特性
 
@@ -13,7 +20,8 @@
 - 🏙️ **多城市支持** - 支持全国城市搜索和地理定位
 - 🎨 **现代化UI** - Material Design风格，支持浅色/深色主题
 - ✨ **丰富动画** - 天气状况匹配的动画效果
-- 🖥️ **跨平台** - 支持 Windows、macOS、Linux
+- 🖥️ **跨平台** - 桌面版支持 Windows、macOS、Linux
+- 🌐 **Web兼容** - Web版支持现代浏览器和PWA
 
 ## 技术栈
 
@@ -45,42 +53,109 @@ cd WeatherDuck
 npm install
 ```
 
-### 开发环境
+### 双目标开发环境
+
+#### 桌面版开发
 
 ```bash
-# 启动开发服务器
-npm run dev
+# 启动桌面版开发环境（推荐）
+npm run dev:main
 
-# 或者分别启动渲染进程和主进程
-npm run dev:renderer  # 启动 Vite 开发服务器
-npm run dev:main      # 启动 Electron 主进程
+# 或者分别启动
+npm run dev:electron  # 启动 Electron 渲染进程
+npm run start         # 启动 Electron 主进程
 ```
 
-### 构建和打包
+#### Web版开发
 
 ```bash
-# 构建应用
-npm run build
+# 启动Web版开发服务器
+npm run dev:web
 
-# 打包 Electron 应用
-npm run electron:build
+# 预览Web版构建结果
+npm run preview:web
+```
+
+#### 同时开发两个目标
+
+```bash
+# 同时启动桌面版和Web版开发环境
+npm run dev
+```
+
+### 双目标构建和打包
+
+#### Web版构建
+
+```bash
+# 构建Web版
+npm run build:web
+
+# 预览Web版
+npm run preview:web
+```
+
+#### 桌面版构建
+
+```bash
+# 构建桌面版渲染进程
+npm run build:electron
+# 或
+npm run build:renderer
+
+# 构建主进程
+npm run build:main
+
+# 完整构建所有目标
+npm run build
+```
+
+#### 桌面版打包
+
+```bash
+# 打包桌面应用
+npm run package
 
 # 生成安装包
-npm run electron:package
+npm run make
+
+# 发布应用
+npm run publish
 ```
 
 ## 开发指南
 
-### 项目结构
+### 双目标项目结构
 
 ```
 WeatherDuck/
-├── src/                    # 源代码目录
-│   ├── main/              # Electron 主进程
-│   ├── renderer/          # React 渲染进程
-│   ├── shared/            # 共享代码
-│   └── assets/            # 静态资源
-├── dist/                  # 构建输出
+├── src/                    # 共享源代码目录
+│   ├── components/        # React 组件
+│   ├── hooks/             # React Hooks
+│   ├── services/          # 业务服务
+│   ├── types/             # TypeScript 类型定义
+│   ├── utils/             # 工具函数
+│   ├── assets/            # 静态资源
+│   └── main/              # Electron 主进程代码
+├── src-electron/          # Electron 渲染进程入口
+│   ├── App.tsx            # Electron 版本应用组件
+│   ├── index.tsx          # Electron 入口文件
+│   ├── index.html         # Electron HTML 模板
+│   └── main/              # 主进程文件
+├── src-web/               # Web 版本入口
+│   ├── App.tsx            # Web 版本应用组件
+│   ├── index.tsx          # Web 入口文件
+│   └── index.html         # Web HTML 模板
+├── dist/                  # Electron 构建输出
+│   ├── main/              # 主进程构建结果
+│   └── renderer/          # 渲染进程构建结果
+├── dist-web/              # Web 版构建输出
+├── vite.config.ts         # 主 Vite 配置
+├── vite.web.config.ts     # Web 版专用配置
+├── vite.electron.config.ts # Electron 版专用配置
+├── tsconfig.json          # 主 TypeScript 配置
+├── tsconfig.web.json      # Web 版 TypeScript 配置
+├── tsconfig.electron.json # Electron 版 TypeScript 配置
 ├── .github/               # GitHub Actions 配置
 ├── docs/                  # 项目文档
 └── tests/                 # 测试文件

@@ -1,58 +1,94 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer } from 'electron';
 
-// 定义API接口类型
-export interface ElectronAPI {
-  // 天气相关API
-  getWeather: (cityName: string) => Promise<any>;
-  getForecast: (cityName: string) => Promise<any>;
-  searchCities: (query: string) => Promise<any>;
+// --------- Expose some API to the Renderer process ---------
+contextBridge.exposeInMainWorld('ipcRenderer', {
+  on(...args: Parameters<typeof ipcRenderer.on>) {
+    const [channel, listener] = args;
+    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args));
+  },
+  off(...args: Parameters<typeof ipcRenderer.off>) {
+    const [channel, ...omit] = args;
+    return ipcRenderer.off(channel, ...omit);
+  },
+  send(...args: Parameters<typeof ipcRenderer.send>) {
+    const [channel, ...omit] = args;
+    return ipcRenderer.send(channel, ...omit);
+  },
+  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
+    const [channel, ...omit] = args;
+    return ipcRenderer.invoke(channel, ...omit);
+  },
+});
 
-  // 数据库相关API
-  saveFavoriteCity: (cityData: any) => Promise<any>;
-  getFavoriteCities: () => Promise<any>;
-
-  // 设置相关API
-  getSettings: () => Promise<any>;
-  saveSettings: (settings: any) => Promise<any>;
-
-  // 系统相关API
-  onShowAbout: (callback: () => void) => void;
-  removeAllListeners: (channel: string) => void;
+// --------- Preload scripts loading ---------
+function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
+  return new Promise((resolve) => {
+    if (condition.includes(document.readyState)) {
+      resolve(true);
+    } else {
+      document.addEventListener('readystatechange', () => {
+        if (condition.includes(document.readyState)) {
+          resolve(true);
+        }
+      });
+    }
+  });
 }
 
-// 暴露受保护的方法给渲染进程
-const electronAPI: ElectronAPI = {
-  // 天气相关API
-  getWeather: (cityName: string) => ipcRenderer.invoke("get-weather", cityName),
-  getForecast: (cityName: string) =>
-    ipcRenderer.invoke("get-forecast", cityName),
-  searchCities: (query: string) => ipcRenderer.invoke("search-cities", query),
-
-  // 数据库相关API
-  saveFavoriteCity: (cityData: any) =>
-    ipcRenderer.invoke("save-favorite-city", cityData),
-  getFavoriteCities: () => ipcRenderer.invoke("get-favorite-cities"),
-
-  // 设置相关API
-  getSettings: () => ipcRenderer.invoke("get-settings"),
-  saveSettings: (settings: any) =>
-    ipcRenderer.invoke("save-settings", settings),
-
-  // 系统相关API
-  onShowAbout: (callback: () => void) => {
-    ipcRenderer.on("show-about", callback);
+const safeDOM = {
+  append(parent: HTMLElement, child: HTMLElement) {
+    if (!Array.from(parent.children).find(c => c === child)) {
+      return parent.appendChild(child);
+    }
   },
-  removeAllListeners: (channel: string) => {
-    ipcRenderer.removeAllListeners(channel);
+  remove(parent: HTMLElement, child: HTMLElement) {
+    if (Array.from(parent.children).find(c => c === child)) {
+      return parent.removeChild(child);
+    }
   },
 };
 
-// 将API暴露给渲染进程
-contextBridge.exposeInMainWorld("electronAPI", electronAPI);
+// --------- Expose API to renderer process ---------
+contextBridge.exposeInMainWorld('electronAPI', {
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  showMessageBox: (options: Electron.MessageBoxOptions) => 
+    ipcRenderer.invoke('show-message-box', options),
+  showErrorBox: (title: string, content: string) => 
+    ipcRenderer.invoke('show-error-box', title, content),
+  openWindow: (url: string) => ipcRenderer.invoke('open-win', url),
+  
+  // Platform info
+  platform: process.platform,
+  
+  // Safe DOM manipulation
+  safeDOM,
+  
+  // Environment info
+  isElectron: true,
+});
 
-// 类型声明，供TypeScript使用
+// --------- Loading animation ---------
+domReady().then(() => {
+  const loaderElement = document.querySelector('#initial-loader');
+  if (loaderElement) {
+    loaderElement.remove();
+  }
+});
+
+// --------- Type definitions for renderer process ---------
+export interface ElectronAPI {
+  getAppVersion: () => Promise<string>;
+  showMessageBox: (options: Electron.MessageBoxOptions) => Promise<Electron.MessageBoxReturnValue>;
+  showErrorBox: (title: string, content: string) => Promise<void>;
+  openWindow: (url: string) => Promise<void>;
+  platform: NodeJS.Platform;
+  safeDOM: typeof safeDOM;
+  isElectron: boolean;
+}
+
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+    ipcRenderer: typeof ipcRenderer;
   }
 }

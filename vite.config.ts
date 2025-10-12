@@ -10,15 +10,15 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     
     // 根据构建模式设置不同的根目录和入口
-    root: isWebPreview ? 'src/web' : 'src/renderer',
+    root: isWebPreview ? 'src-web' : 'src-electron',
     
     build: {
-      outDir: isWebPreview ? '../../dist-web' : '../../dist/renderer',
+      outDir: isWebPreview ? '../dist-web' : '../dist/renderer',
       emptyOutDir: true,
       rollupOptions: {
         input: isWebPreview 
-          ? resolve(__dirname, 'src/web/index.html')
-          : resolve(__dirname, 'src/renderer/index.html'),
+          ? resolve(__dirname, 'src-web/index.html')
+          : resolve(__dirname, 'src-electron/index.html'),
       },
       // Web预览版本的特殊配置
       ...(isWebPreview && {
@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
     
     // 预览服务器配置
     preview: {
-      port: 3000,
+      port: 3001,
       host: true,
     },
     
@@ -46,9 +46,15 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
-        '@renderer': resolve(__dirname, 'src/renderer'),
-        '@shared': resolve(__dirname, 'src/shared'),
-        '@web': resolve(__dirname, 'src/web'),
+        '@shared': resolve(__dirname, 'src'),
+        '@electron': resolve(__dirname, 'src-electron'),
+        '@electron/main': resolve(__dirname, 'src-electron/main'),
+        '@web': resolve(__dirname, 'src-web'),
+        '@assets': resolve(__dirname, 'src/assets'),
+        '@services': resolve(__dirname, 'src/services'),
+        '@types': resolve(__dirname, 'src/types'),
+        '@utils': resolve(__dirname, 'src/utils'),
+        '@components': resolve(__dirname, 'src/components'),
       },
     },
     

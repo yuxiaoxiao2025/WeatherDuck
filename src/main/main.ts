@@ -1,184 +1,163 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, MenuItemConstructorOptions } from "electron";
-import * as path from "path";
+import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from 'electron';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import os from 'node:os';
+import { update } from './update';
 
-// 保持对窗口对象的全局引用，如果不这样做，当JavaScript对象被垃圾回收时，窗口将自动关闭
-let mainWindow: BrowserWindow | null = null;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const isDev = process.env.NODE_ENV === "development";
+// The built directory structure
+//
+// ├─┬ dist-electron
+// │ ├─┬ main
+// │ │ └── index.js    > Electron-Main
+// │ └─┬ preload
+// │   └── index.mjs    > Preload-Scripts
+// ├─┬ dist
+// │ └── index.html    > Electron-Renderer
+//
+process.env.APP_ROOT = path.join(__dirname, '../..');
 
-function createWindow(): void {
-  // 创建浏览器窗口
-  mainWindow = new BrowserWindow({
-    width: 400,
-    height: 600,
-    minWidth: 350,
-    minHeight: 500,
+export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
+export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
+export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
+  ? path.join(process.env.APP_ROOT, 'public')
+  : RENDERER_DIST;
+
+// Disable GPU Acceleration for Windows 7
+if (os.release().startsWith('6.1')) app.disableHardwareAcceleration();
+
+// Set application name for Windows 10+ notifications
+if (process.platform === 'win32') app.setAppUserModelId(app.getName());
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+
+let win: BrowserWindow | null = null;
+const preload = path.join(__dirname, '../preload/index.mjs');
+const indexHtml = path.join(RENDERER_DIST, 'index.html');
+
+async function createWindow() {
+  win = new BrowserWindow({
+    title: '天气鸭 - WeatherDuck',
+    icon: path.join(process.env.VITE_PUBLIC || RENDERER_DIST, 'favicon.ico'),
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
     webPreferences: {
-      nodeIntegration: false,
+      preload,
+      // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
+      // nodeIntegration: true,
+      // contextIsolation: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      webSecurity: true,
     },
-    icon: path.join(__dirname, "../assets/icon.png"),
-    titleBarStyle: "hiddenInset",
-    show: false, // 先不显示，等待ready-to-show事件
+    show: false,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
   });
 
-  // 加载应用
-  if (isDev) {
-    mainWindow.loadURL("http://localhost:3000");
-    // 开发环境下打开开发者工具
-    mainWindow.webContents.openDevTools();
+  if (VITE_DEV_SERVER_URL) { // #298
+    win.loadURL(VITE_DEV_SERVER_URL);
+    // Open devTool if the app is not packaged
+    win.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+    win.loadFile(indexHtml);
   }
 
-  // 当窗口准备好显示时
-  mainWindow.once("ready-to-show", () => {
-    if (mainWindow) {
-      mainWindow.show();
+  // Test actively push message to the Electron-Renderer
+  win.webContents.on('did-finish-load', () => {
+    win?.webContents.send('main-process-message', new Date().toLocaleString());
+  });
 
-      // 在开发环境下聚焦窗口
-      if (isDev) {
-        mainWindow.focus();
-      }
+  // Make all links open with the browser, not with the application
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:')) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  // Apply electron-updater
+  update(win);
+
+  // Show window when ready
+  win.once('ready-to-show', () => {
+    win?.show();
+    
+    if (process.env.NODE_ENV === 'development') {
+      win?.webContents.openDevTools();
     }
-  });
-
-  // 当窗口关闭时
-  mainWindow.on("closed", () => {
-    mainWindow = null;
-  });
-
-  // 处理外部链接
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: "deny" };
   });
 }
 
-// 当Electron完成初始化并准备创建浏览器窗口时调用此方法
-app.whenReady().then(async () => {
-  createWindow();
+app.whenReady().then(createWindow);
 
-  // 设置应用菜单
-  createMenu();
+app.on('window-all-closed', () => {
+  win = null;
+  if (process.platform !== 'darwin') app.quit();
+});
 
-  app.on("activate", () => {
-    // 在macOS上，当单击dock图标并且没有其他窗口打开时，通常会在应用程序中重新创建一个窗口
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+app.on('second-instance', () => {
+  if (win) {
+    // Focus on the main window if the user tried to open another
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
+app.on('activate', () => {
+  const allWindows = BrowserWindow.getAllWindows();
+  if (allWindows.length) {
+    allWindows[0].focus();
+  } else {
+    createWindow();
+  }
+});
+
+// New window example arg: new windows url
+ipcMain.handle('open-win', (_, arg) => {
+  const childWindow = new BrowserWindow({
+    webPreferences: {
+      preload,
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
   });
-});
 
-// 当所有窗口关闭时退出应用
-app.on("window-all-closed", () => {
-  // 在macOS上，应用程序及其菜单栏通常保持活动状态，直到用户使用Cmd + Q明确退出
-  if (process.platform !== "darwin") {
-    app.quit();
+  if (VITE_DEV_SERVER_URL) {
+    childWindow.loadURL(`${VITE_DEV_SERVER_URL}#${arg}`);
+  } else {
+    childWindow.loadFile(indexHtml, { hash: arg });
   }
 });
 
-// 在此文件中，您可以包含应用程序特定的主进程代码的其余部分
-// 您也可以将它们放在单独的文件中并在此处require它们
-
-// IPC处理程序 - 基础实现
-ipcMain.handle("get-weather", async (_event, cityName: string) => {
-  try {
-    // 模拟天气数据
-    return {
-      city: cityName,
-      temperature: 22,
-      condition: "多云",
-      humidity: 65,
-      windSpeed: 12,
-      precipitation: 30
-    };
-  } catch (error) {
-    console.error("获取天气数据失败:", error);
-    throw error;
-  }
+// IPC handlers for weather app functionality
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
 });
 
-ipcMain.handle("get-forecast", async (_event, _cityName: string) => {
-  try {
-    // 模拟预报数据
-    return [
-      { date: "今天", temperature: 22, condition: "多云" },
-      { date: "明天", temperature: 25, condition: "晴天" },
-      { date: "后天", temperature: 20, condition: "小雨" }
-    ];
-  } catch (error) {
-    console.error("获取天气预报失败:", error);
-    throw error;
-  }
+ipcMain.handle('show-message-box', async (_, options) => {
+  const result = await dialog.showMessageBox(win!, options);
+  return result;
 });
 
-ipcMain.handle("search-cities", async (_event, query: string) => {
-  try {
-    // 模拟城市搜索
-    const cities = ["北京", "上海", "广州", "深圳", "杭州"];
-    return cities.filter(city => city.includes(query));
-  } catch (error) {
-    console.error("搜索城市失败:", error);
-    throw error;
-  }
+ipcMain.handle('show-error-box', (_, title, content) => {
+  dialog.showErrorBox(title, content);
 });
 
-ipcMain.handle("save-favorite-city", async (_event, cityData: any) => {
-  try {
-    // 模拟保存收藏城市
-    console.log("保存收藏城市:", cityData);
-    return { success: true };
-  } catch (error) {
-    console.error("保存收藏城市失败:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("get-favorite-cities", async () => {
-  try {
-    // 模拟获取收藏城市
-    return ["北京", "上海"];
-  } catch (error) {
-    console.error("获取收藏城市失败:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("get-settings", async () => {
-  try {
-    // 模拟获取设置
-    return {
-      temperatureUnit: "celsius",
-      autoRefresh: true,
-      notifications: true
-    };
-  } catch (error) {
-    console.error("获取设置失败:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("save-settings", async (_event, settings: any) => {
-  try {
-    // 模拟保存设置
-    console.log("保存设置:", settings);
-    return { success: true };
-  } catch (error) {
-    console.error("保存设置失败:", error);
-    throw error;
-  }
-});
-
-function createMenu(): void {
-  const template: MenuItemConstructorOptions[] = [
+// Menu setup
+const createMenu = () => {
+  const template: Electron.MenuItemConstructorOptions[] = [
     {
-      label: "文件",
+      label: '文件',
       submenu: [
         {
-          label: "退出",
-          accelerator: process.platform === "darwin" ? "Cmd+Q" : "Ctrl+Q",
+          label: '退出',
+          accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
           click: () => {
             app.quit();
           },
@@ -186,44 +165,42 @@ function createMenu(): void {
       ],
     },
     {
-      label: "编辑",
+      label: '编辑',
       submenu: [
-        { label: "撤销", accelerator: "CmdOrCtrl+Z", role: "undo" },
-        { label: "重做", accelerator: "Shift+CmdOrCtrl+Z", role: "redo" },
-        { type: "separator" },
-        { label: "剪切", accelerator: "CmdOrCtrl+X", role: "cut" },
-        { label: "复制", accelerator: "CmdOrCtrl+C", role: "copy" },
-        { label: "粘贴", accelerator: "CmdOrCtrl+V", role: "paste" },
+        { label: '撤销', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: '重做', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+        { type: 'separator' },
+        { label: '剪切', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
       ],
     },
     {
-      label: "视图",
+      label: '视图',
       submenu: [
-        { label: "重新加载", accelerator: "CmdOrCtrl+R", role: "reload" },
-        {
-          label: "强制重新加载",
-          accelerator: "CmdOrCtrl+Shift+R",
-          role: "forceReload",
-        },
-        { label: "切换开发者工具", accelerator: "F12", role: "toggleDevTools" },
-        { type: "separator" },
-        { label: "实际大小", accelerator: "CmdOrCtrl+0", role: "resetZoom" },
-        { label: "放大", accelerator: "CmdOrCtrl+Plus", role: "zoomIn" },
-        { label: "缩小", accelerator: "CmdOrCtrl+-", role: "zoomOut" },
-        { type: "separator" },
-        { label: "切换全屏", accelerator: "F11", role: "togglefullscreen" },
+        { label: '重新加载', accelerator: 'CmdOrCtrl+R', role: 'reload' },
+        { label: '强制重新加载', accelerator: 'CmdOrCtrl+Shift+R', role: 'forceReload' },
+        { label: '开发者工具', accelerator: 'F12', role: 'toggleDevTools' },
+        { type: 'separator' },
+        { label: '实际大小', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+        { label: '放大', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
+        { label: '缩小', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+        { type: 'separator' },
+        { label: '全屏', accelerator: 'F11', role: 'togglefullscreen' },
       ],
     },
     {
-      label: "帮助",
+      label: '帮助',
       submenu: [
         {
-          label: "关于天气鸭",
-          click: () => {
-            // 显示关于对话框
-            if (mainWindow) {
-              mainWindow.webContents.send("show-about");
-            }
+          label: '关于天气鸭',
+          click: async () => {
+            await dialog.showMessageBox(win!, {
+              type: 'info',
+              title: '关于天气鸭',
+              message: '天气鸭 - WeatherDuck',
+              detail: `版本: ${app.getVersion()}\n一个优雅的天气应用`,
+            });
           },
         },
       ],
@@ -232,4 +209,8 @@ function createMenu(): void {
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
-}
+};
+
+app.whenReady().then(() => {
+  createMenu();
+});
