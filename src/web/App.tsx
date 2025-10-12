@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Cloud, 
-  Sun, 
-  CloudRain, 
-  Snowflake, 
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Cloud,
+  Sun,
+  CloudRain,
+  Snowflake,
   Wind,
   MapPin,
   Thermometer,
@@ -13,39 +13,45 @@ import {
   Gauge,
   Download,
   Github,
-  ExternalLink
-} from 'lucide-react';
+  ExternalLink,
+} from "lucide-react";
 
 // Web版本的模拟数据
 const mockWeatherData = {
-  location: '北京市',
+  location: "北京市",
   temperature: 22,
-  condition: '晴',
+  condition: "晴",
   humidity: 65,
   windSpeed: 12,
   visibility: 10,
   pressure: 1013,
   forecast: [
-    { day: '今天', high: 25, low: 18, condition: '晴', icon: Sun },
-    { day: '明天', high: 23, low: 16, condition: '多云', icon: Cloud },
-    { day: '后天', high: 20, low: 14, condition: '小雨', icon: CloudRain },
-    { day: '周四', high: 18, low: 12, condition: '雨', icon: CloudRain },
-    { day: '周五', high: 22, low: 15, condition: '晴', icon: Sun },
-  ]
+    { day: "今天", high: 25, low: 18, condition: "晴", icon: Sun },
+    { day: "明天", high: 23, low: 16, condition: "多云", icon: Cloud },
+    { day: "后天", high: 20, low: 14, condition: "小雨", icon: CloudRain },
+    { day: "周四", high: 18, low: 12, condition: "雨", icon: CloudRain },
+    { day: "周五", high: 22, low: 15, condition: "晴", icon: Sun },
+  ],
 };
 
-const WeatherIcon = ({ condition, size = 64 }: { condition: string; size?: number }) => {
+const WeatherIcon = ({
+  condition,
+  size = 64,
+}: {
+  condition: string;
+  size?: number;
+}) => {
   const iconProps = { size, className: "text-blue-500" };
-  
+
   switch (condition) {
-    case '晴':
+    case "晴":
       return <Sun {...iconProps} className="text-yellow-500" />;
-    case '多云':
+    case "多云":
       return <Cloud {...iconProps} className="text-gray-500" />;
-    case '小雨':
-    case '雨':
+    case "小雨":
+    case "雨":
       return <CloudRain {...iconProps} className="text-blue-500" />;
-    case '雪':
+    case "雪":
       return <Snowflake {...iconProps} className="text-blue-200" />;
     default:
       return <Sun {...iconProps} />;
@@ -87,7 +93,9 @@ const WeatherCard = () => (
     <div className="text-center mb-6">
       <div className="flex items-center justify-center mb-2">
         <MapPin size={20} className="text-gray-500 mr-2" />
-        <span className="text-lg font-medium text-gray-700">{mockWeatherData.location}</span>
+        <span className="text-lg font-medium text-gray-700">
+          {mockWeatherData.location}
+        </span>
       </div>
       <div className="flex items-center justify-center mb-4">
         <WeatherIcon condition={mockWeatherData.condition} size={80} />
@@ -97,7 +105,7 @@ const WeatherCard = () => (
       </div>
       <div className="text-xl text-gray-600">{mockWeatherData.condition}</div>
     </div>
-    
+
     <div className="grid grid-cols-2 gap-4 mb-6">
       <div className="flex items-center space-x-2">
         <Droplets size={20} className="text-blue-500" />
@@ -148,7 +156,9 @@ const ForecastCard = () => (
           transition={{ delay: 0.5 + index * 0.1 }}
           className="text-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
         >
-          <div className="text-sm font-medium text-gray-600 mb-2">{day.day}</div>
+          <div className="text-sm font-medium text-gray-600 mb-2">
+            {day.day}
+          </div>
           <div className="flex justify-center mb-2">
             <WeatherIcon condition={day.condition} size={32} />
           </div>
@@ -170,30 +180,38 @@ const FeatureShowcase = () => (
     transition={{ delay: 0.6 }}
     className="max-w-4xl mx-auto mt-8 p-6"
   >
-    <h3 className="text-2xl font-bold text-center text-gray-800 mb-8">桌面版完整功能</h3>
+    <h3 className="text-2xl font-bold text-center text-gray-800 mb-8">
+      桌面版完整功能
+    </h3>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="text-center p-6 bg-white rounded-xl shadow-lg">
         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Thermometer className="text-blue-600" size={32} />
         </div>
         <h4 className="font-semibold text-gray-800 mb-2">实时天气</h4>
-        <p className="text-gray-600 text-sm">精准的实时天气数据，包括温度、湿度、风速等详细信息</p>
+        <p className="text-gray-600 text-sm">
+          精准的实时天气数据，包括温度、湿度、风速等详细信息
+        </p>
       </div>
-      
+
       <div className="text-center p-6 bg-white rounded-xl shadow-lg">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <MapPin className="text-green-600" size={32} />
         </div>
         <h4 className="font-semibold text-gray-800 mb-2">多地管理</h4>
-        <p className="text-gray-600 text-sm">支持添加多个城市，快速切换查看不同地区天气</p>
+        <p className="text-gray-600 text-sm">
+          支持添加多个城市，快速切换查看不同地区天气
+        </p>
       </div>
-      
+
       <div className="text-center p-6 bg-white rounded-xl shadow-lg">
         <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Cloud className="text-purple-600" size={32} />
         </div>
         <h4 className="font-semibold text-gray-800 mb-2">天气预警</h4>
-        <p className="text-gray-600 text-sm">及时的天气预警通知，让您提前做好准备</p>
+        <p className="text-gray-600 text-sm">
+          及时的天气预警通知，让您提前做好准备
+        </p>
       </div>
     </div>
   </motion.div>
@@ -221,21 +239,23 @@ const App: React.FC = () => {
             exit={{ opacity: 0 }}
           >
             <WebPreviewBanner />
-            
+
             <div className="container mx-auto px-4 py-8">
               <motion.div
                 initial={{ y: -30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 className="text-center mb-8"
               >
-                <h1 className="text-4xl font-bold text-gray-800 mb-2">天气鸭</h1>
+                <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                  天气鸭
+                </h1>
                 <p className="text-gray-600">现代化的桌面天气应用</p>
               </motion.div>
-              
+
               <WeatherCard />
               <ForecastCard />
               <FeatureShowcase />
-              
+
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

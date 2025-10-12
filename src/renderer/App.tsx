@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { WeatherDisplay } from './components/WeatherDisplay';
-import { CitySearch } from './components/CitySearch';
-import { FavoriteCities } from './components/FavoriteCities';
-import { Settings } from './components/Settings';
-import { CuckooClock } from './components/CuckooClock';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { WeatherProvider } from './contexts/WeatherContext';
-import { SettingsProvider } from './contexts/SettingsContext';
-import { Sidebar } from './components/Sidebar';
-import { Cloud, Sun, CloudRain, CloudSnow } from 'lucide-react';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { WeatherDisplay } from "./components/WeatherDisplay";
+import { CitySearch } from "./components/CitySearch";
+import { FavoriteCities } from "./components/FavoriteCities";
+import { Settings } from "./components/Settings";
+import { CuckooClock } from "./components/CuckooClock";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { WeatherProvider } from "./contexts/WeatherContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
+import { Sidebar } from "./components/Sidebar";
+// 图标将在具体组件中按需导入
+import "./App.css";
 
 // 主应用组件
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'weather' | 'search' | 'favorites' | 'settings'>('weather');
+  const [currentView, setCurrentView] = useState<
+    "weather" | "search" | "favorites" | "settings"
+  >("weather");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ const App: React.FC = () => {
         >
           <Sun className="w-16 h-16 text-yellow-300 mx-auto" />
         </motion.div>
-        
+
         <motion.h1
           className="text-3xl font-bold text-white mb-4"
           initial={{ y: 20, opacity: 0 }}
@@ -57,7 +59,7 @@ const App: React.FC = () => {
         >
           天气鸭
         </motion.h1>
-        
+
         <motion.p
           className="text-blue-100"
           initial={{ y: 20, opacity: 0 }}
@@ -66,7 +68,7 @@ const App: React.FC = () => {
         >
           正在加载天气数据...
         </motion.p>
-        
+
         <motion.div
           className="mt-6 flex justify-center space-x-2"
           initial={{ opacity: 0 }}
@@ -98,7 +100,7 @@ const App: React.FC = () => {
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* 侧边栏 */}
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      
+
       {/* 主内容区域 */}
       <main className="flex-1 overflow-hidden">
         <AnimatePresence mode="wait">
@@ -110,14 +112,14 @@ const App: React.FC = () => {
             transition={{ duration: 0.3 }}
             className="h-full"
           >
-            {currentView === 'weather' && <WeatherDisplay />}
-            {currentView === 'search' && <CitySearch />}
-            {currentView === 'favorites' && <FavoriteCities />}
-            {currentView === 'settings' && <Settings />}
+            {currentView === "weather" && <WeatherDisplay />}
+            {currentView === "search" && <CitySearch />}
+            {currentView === "favorites" && <FavoriteCities />}
+            {currentView === "settings" && <Settings />}
           </motion.div>
         </AnimatePresence>
       </main>
-      
+
       {/* 布谷鸟时钟组件 */}
       <CuckooClock />
     </div>

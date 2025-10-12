@@ -1,19 +1,20 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /* 全局样式重置 */
 * {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
@@ -82,7 +83,9 @@ button:active {
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* 渐变背景动画 */
@@ -110,11 +113,12 @@ button:active {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
-    opacity: .5;
+    opacity: 0.5;
   }
 }
 
@@ -133,7 +137,7 @@ button:active {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   .grid-responsive {
     grid-template-columns: 1fr;
   }
@@ -143,7 +147,7 @@ button:active {
   .text-responsive {
     font-size: 1.5rem;
   }
-  
+
   .card-responsive {
     padding: 1rem;
   }
@@ -155,7 +159,7 @@ button:active {
     background-color: #0f172a;
     color: #f1f5f9;
   }
-  
+
   .card-dark {
     background-color: #1e293b;
     border-color: #334155;
@@ -167,7 +171,7 @@ button:active {
   button {
     border: 2px solid currentColor;
   }
-  
+
   .card {
     border: 1px solid currentColor;
   }
@@ -189,12 +193,12 @@ button:active {
   .no-print {
     display: none !important;
   }
-  
+
   body {
     background: white !important;
     color: black !important;
   }
-  
+
   .card {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
@@ -220,7 +224,11 @@ button:active {
 
 /* 天气相关的自定义样式 */
 .weather-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.7)
+  );
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -238,7 +246,7 @@ button:active {
 }
 
 .preview-badge::after {
-  content: 'PREVIEW';
+  content: "PREVIEW";
   position: absolute;
   top: -8px;
   right: -8px;
