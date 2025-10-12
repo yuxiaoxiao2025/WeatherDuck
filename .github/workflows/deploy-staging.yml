@@ -10,7 +10,7 @@ on:
 
 # 环境变量
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
   CACHE_DEPENDENCY_PATH: package-lock.json
 
 jobs:
