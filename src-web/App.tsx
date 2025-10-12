@@ -411,14 +411,6 @@ const App: React.FC = () => {
                     下载 Windows 版
                   </Button>
                   <Button 
-                    variant="secondary" 
-                    size="large"
-                    icon={<Download size={20} />}
-                    onClick={() => window.open('#', '_blank')}
-                  >
-                    下载 macOS 版
-                  </Button>
-                  <Button 
                     variant="info" 
                     size="large"
                     icon={<ExternalLink size={20} />}

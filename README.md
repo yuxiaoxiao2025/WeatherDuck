@@ -20,7 +20,7 @@
 - 🏙️ **多城市支持** - 支持全国城市搜索和地理定位
 - 🎨 **现代化UI** - Material Design风格，支持浅色/深色主题
 - ✨ **丰富动画** - 天气状况匹配的动画效果
-- 🖥️ **跨平台** - 桌面版支持 Windows、macOS、Linux
+- 🖥️ **Windows专用** - 桌面版专为Windows平台优化
 - 🌐 **Web兼容** - Web版支持现代浏览器和PWA
 
 ## 技术栈
@@ -212,7 +212,7 @@ QWEATHER_API_KEY=your_api_key_here
 
 - **代码质量检查**: ESLint、Prettier、TypeScript
 - **自动化测试**: 单元测试、端到端测试
-- **多平台构建**: Windows、macOS、Linux
+- **Windows构建**: 专为Windows平台优化的桌面应用
 - **安全扫描**: npm audit、Snyk
 - **性能测试**: Bundle 分析、性能监控
 

@@ -74,7 +74,7 @@ npm run preview:web
 3. **Web构建**: 生成 `dist-web` 目录
 4. **Vercel部署**: 自动部署到预览环境
 5. **部署验证**: 自动检查部署状态
-6. **桌面构建**: 多平台应用打包（可选）
+6. **桌面构建**: Windows应用打包（可选）
 7. **Docker构建**: 容器镜像构建（可选）
 
 ### 最新优化
@@ -240,7 +240,18 @@ LOG_FORMAT=json
 8. 部署状态通知
 
 #### 桌面应用构建
-1. 多平台并行构建 (Windows, macOS, Linux)
+
+桌面应用使用 Electron 构建，专为Windows平台优化：
+
+```bash
+# 构建Windows桌面应用
+npm run build:desktop
+
+# 构建Windows特定版本
+npm run build:desktop:win
+```
+
+1. Windows平台构建优化
 2. Electron应用打包
 3. 安装包生成和签名
 4. GitHub Release发布

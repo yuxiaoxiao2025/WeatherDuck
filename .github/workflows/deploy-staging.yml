@@ -77,14 +77,10 @@ jobs:
           curl -f ${{ steps.vercel-deploy.outputs.preview-url }} || exit 1
           echo "✅ 预览环境部署成功！"
           
-  # 构建桌面应用版本（可选）
+  # 构建桌面应用版本（Windows）
   build-desktop-app:
-    name: 构建桌面应用
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: 构建Windows桌面应用
+    runs-on: windows-latest
         
     steps:
       - name: 检出代码
@@ -97,12 +93,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ${{ env.CACHE_DEPENDENCY_PATH }}
           
-      - name: 安装系统依赖 (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2-dev
-          
+
       - name: 安装依赖
         run: npm ci
         
@@ -111,10 +102,10 @@ jobs:
         env:
           QWEATHER_API_KEY: ${{ secrets.QWEATHER_API_KEY }}
           
-      - name: 上传桌面应用构建产物
+      - name: 上传Windows桌面应用构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-app-${{ matrix.os }}
+          name: desktop-app-windows
           path: out/
           retention-days: 7
           
