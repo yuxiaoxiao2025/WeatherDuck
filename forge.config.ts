@@ -13,7 +13,7 @@ const config: ForgeConfig = {
     asar: true,
     name: '天气鸭',
     executableName: 'weather-duck',
-    icon: './assets/icon',
+    // icon: './assets/icon', // 暂时禁用图标配置
     appBundleId: 'com.weatherduck.app',
     appCategoryType: 'public.app-category.weather',
     win32metadata: {
@@ -34,7 +34,7 @@ const config: ForgeConfig = {
     new MakerSquirrel({
       name: 'weather-duck',
       setupExe: 'WeatherDuck-Setup.exe',
-      setupIcon: './assets/icon.ico',
+      // setupIcon: './assets/icon.ico', // 暂时禁用图标配置
     }),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({

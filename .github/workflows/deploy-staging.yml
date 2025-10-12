@@ -42,7 +42,7 @@ jobs:
           npm run type-check
           
       - name: 运行测试
-        run: npm run test -- --coverage --watchAll=false
+        run: npm run test:ci
         
       - name: 构建Web预览版本
         run: npm run build:web-preview
@@ -107,7 +107,7 @@ jobs:
         run: npm ci
         
       - name: 构建桌面应用
-        run: npm run electron:build
+        run: npm run make
         env:
           QWEATHER_API_KEY: ${{ secrets.QWEATHER_API_KEY }}
           

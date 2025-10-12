@@ -166,7 +166,7 @@ jobs:
         
       - name: 打包Electron应用 (仅Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        run: npm run electron:build
+        run: npm run make
         
       - name: 上传Electron构建产物
         if: matrix.os == 'ubuntu-latest'
