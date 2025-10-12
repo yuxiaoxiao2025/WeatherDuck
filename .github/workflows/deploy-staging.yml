@@ -1,0 +1,196 @@
+name: 预览环境持续部署 (Staging CD)
+
+# 触发条件：代码合并到main或develop分支时自动部署
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch: # 允许手动触发
+
+# 环境变量
+env:
+  NODE_VERSION: '18.x'
+  CACHE_DEPENDENCY_PATH: package-lock.json
+
+jobs:
+  # 构建Web版本预览应用
+  build-web-preview:
+    name: 构建Web预览版本
+    runs-on: ubuntu-latest
+    
+    outputs:
+      preview-url: ${{ steps.deploy.outputs.preview-url }}
+      
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        
+      - name: 设置 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.CACHE_DEPENDENCY_PATH }}
+          
+      - name: 安装依赖
+        run: npm ci
+        
+      - name: 代码质量检查
+        run: |
+          npm run lint
+          npm run type-check
+          
+      - name: 运行测试
+        run: npm run test -- --coverage --watchAll=false
+        
+      - name: 构建Web预览版本
+        run: npm run build:web-preview
+        env:
+          VITE_APP_ENV: staging
+          VITE_QWEATHER_API_KEY: ${{ secrets.QWEATHER_API_KEY }}
+          VITE_APP_VERSION: ${{ github.sha }}
+          VITE_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
+          
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-preview-build
+          path: dist-web/
+          retention-days: 7
+          
+      - name: 部署到 Vercel
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          vercel-args: '--prod'
+          
+  # 构建桌面应用版本（可选）
+  build-desktop-app:
+    name: 构建桌面应用
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        
+      - name: 设置 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.CACHE_DEPENDENCY_PATH }}
+          
+      - name: 安装系统依赖 (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2-dev
+          
+      - name: 安装依赖
+        run: npm ci
+        
+      - name: 构建桌面应用
+        run: npm run electron:build
+        env:
+          QWEATHER_API_KEY: ${{ secrets.QWEATHER_API_KEY }}
+          
+      - name: 上传桌面应用构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-app-${{ matrix.os }}
+          path: out/
+          retention-days: 7
+          
+  # 部署通知和状态更新
+  deploy-notification:
+    name: 部署通知
+    runs-on: ubuntu-latest
+    needs: [build-web-preview, build-desktop-app]
+    if: always()
+    
+    steps:
+      - name: 部署成功通知
+        if: needs.build-web-preview.result == 'success'
+        run: |
+          echo "🎉 预览环境部署成功！"
+          echo "📱 Web预览地址: ${{ needs.build-web-preview.outputs.preview-url }}"
+          echo "💻 桌面应用构建完成，可在Actions页面下载"
+          
+      - name: 部署失败通知
+        if: needs.build-web-preview.result == 'failure'
+        run: |
+          echo "❌ 预览环境部署失败，请检查构建日志"
+          exit 1
+          
+  # Docker镜像构建（可选）
+  build-docker-image:
+    name: 构建Docker镜像
+    runs-on: ubuntu-latest
+    needs: build-web-preview
+    if: success()
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: web-preview-build
+          path: dist-web/
+          
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 登录 Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      - name: 构建并推送Docker镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.staging
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/weather-duck:staging
+            ${{ secrets.DOCKER_USERNAME }}/weather-duck:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: 部署到云服务器 (可选)
+        if: vars.ENABLE_SERVER_DEPLOY == 'true'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # 拉取最新镜像
+            docker pull ${{ secrets.DOCKER_USERNAME }}/weather-duck:staging
+            
+            # 停止旧容器
+            docker stop weather-duck-staging || true
+            docker rm weather-duck-staging || true
+            
+            # 启动新容器
+            docker run -d \
+              --name weather-duck-staging \
+              --restart unless-stopped \
+              -p 3000:80 \
+              -e NODE_ENV=staging \
+              ${{ secrets.DOCKER_USERNAME }}/weather-duck:staging
+              
+            # 清理旧镜像
+            docker image prune -f

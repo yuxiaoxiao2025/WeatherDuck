@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="天气鸭 - 现代化的桌面天气应用预览版" />
+  <meta name="keywords" content="天气,预报,桌面应用,React,TypeScript" />
+  <meta name="author" content="WeatherDuck Team" />
+  
+  <!-- PWA相关 -->
+  <meta name="theme-color" content="#3B82F6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="天气鸭" />
+  
+  <!-- 图标 -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  
+  <!-- 预加载关键资源 -->
+  <link rel="preconnect" href="https://devapi.qweather.com" />
+  <link rel="preconnect" href="https://geoapi.qweather.com" />
+  
+  <title>天气鸭 - Web预览版</title>
+  
+  <style>
+    /* 加载动画 */
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      margin-top: 20px;
+      opacity: 0.9;
+    }
+    
+    /* 预览版提示 */
+    .preview-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+      color: white;
+      text-align: center;
+      padding: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+    }
+    
+    #root {
+      padding-top: 40px; /* 为预览横幅留出空间 */
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/index-Kh2-nCcG.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Bb6dIKdx.css">
+</head>
+<body>
+  <!-- 预览版提示横幅 -->
+  <div class="preview-banner">
+    🚀 这是天气鸭的Web预览版 - 完整功能请下载桌面应用
+  </div>
+  
+  <!-- 应用根节点 -->
+  <div id="root">
+    <!-- 加载动画 -->
+    <div id="loading">
+      <div style="text-align: center;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">天气鸭正在加载中...</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 应用入口脚本 -->
+  
+  <script>
+    // 移除加载动画
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.opacity = '0';
+          setTimeout(() => {
+            loading.remove();
+          }, 500);
+        }
+      }, 1000);
+    });
+    
+    // 错误处理
+    window.addEventListener('error', (e) => {
+      console.error('应用加载错误:', e.error);
+    });
+    
+    // 服务工作者注册（PWA支持）
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
