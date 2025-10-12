@@ -36,6 +36,20 @@ data/
 logs/
 *.log
 
+# Temporary output files
+*_output.txt
+*_results.txt
+*_log.txt
+*_check.txt
+*_errors.txt
+build_output*.txt
+make_output*.txt
+npm_*_log.txt
+typescript_*.txt
+lint_*.txt
+electron_build_log.txt
+test_results.txt
+
 # Runtime data
 pids/
 *.pid
