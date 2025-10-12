@@ -1,8 +1,5 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
@@ -15,18 +12,10 @@ const config: ForgeConfig = {
     executableName: 'weather-duck',
     // icon: './assets/icon', // 暂时禁用图标配置
     appBundleId: 'com.weatherduck.app',
-    appCategoryType: 'public.app-category.weather',
     win32metadata: {
       CompanyName: 'WeatherDuck Team',
       ProductName: '天气鸭',
       FileDescription: '一个优雅的天气应用',
-    },
-    osxSign: {},
-    osxNotarize: {
-      tool: 'notarytool',
-      appleId: process.env.APPLE_ID || '',
-      appleIdPassword: process.env.APPLE_PASSWORD || '',
-      teamId: process.env.APPLE_TEAM_ID || '',
     },
   },
   rebuildConfig: {},
@@ -35,27 +24,6 @@ const config: ForgeConfig = {
       name: 'weather-duck',
       setupExe: 'WeatherDuck-Setup.exe',
       // setupIcon: './assets/icon.ico', // 暂时禁用图标配置
-    }),
-    new MakerZIP({}, ['darwin']),
-    new MakerRpm({
-      options: {
-        name: 'weather-duck',
-        productName: '天气鸭',
-        genericName: 'Weather App',
-        description: '一个优雅的天气应用',
-        categories: ['Utility', 'Weather'],
-        icon: './assets/icon.png',
-      },
-    }),
-    new MakerDeb({
-      options: {
-        name: 'weather-duck',
-        productName: '天气鸭',
-        genericName: 'Weather App',
-        description: '一个优雅的天气应用',
-        categories: ['Utility'],
-        icon: './assets/icon.png',
-      },
     }),
   ],
   plugins: [
