@@ -72,10 +72,10 @@ STATUS: ENABLED
 
 
 
-## [规则 3] Git 提交信息格式 [DISABLED]
+## [规则 3] Git 提交信息格式 [ENABLED]
 # 标准化提交信息结构
 
-STATUS: DISABLED
+STATUS: ENABLED
 说明：
 - 遵循 Conventional Commits 规范
 - 格式：<type>(<scope>): <subject>
@@ -163,10 +163,10 @@ STATUS: ENABLED
 
 
 
-## [规则 7] 测试覆盖率要求 [DISABLED]
+## [规则 7] 测试覆盖率要求 [ENABLED]
 # 新代码的测试标准
 
-STATUS: DISABLED
+STATUS: ENABLED
 说明：
 - 新功能必须包含单元测试
 - 错误修复必须包含回归测试
@@ -182,10 +182,10 @@ STATUS: DISABLED
 原因：确保代码可靠性并防止回归
 
 
-## [规则 8] 部署前检查清单 [DISABLED]
+## [规则 8] 部署前检查清单 [ENABLED]
 # 部署前的验证步骤
 
-STATUS: DISABLED
+STATUS: ENABLED
 说明：
 部署到生产环境前：
 - [ ] 所有测试通过
@@ -251,10 +251,10 @@ STATUS: ENABLED
 
 
 
-## [规则 11] 文件组织标准 [DISABLED]
+## [规则 11] 文件组织标准 [ENABLED]
 # 项目结构和文件放置
 
-STATUS: DISABLED
+STATUS: ENABLED
 说明：
 - 遵循已建立的项目结构
 - 将相关文件分组到适当的目录
@@ -319,9 +319,13 @@ STATUS: ENABLED
 
 ✅ [规则 1]  变更日志管理 - 记录所有变更
 ✅ [规则 2]  版本号管理 - 遵循语义化版本控制
+✅ [规则 3]  Git 提交信息格式 - Conventional Commits
 ✅ [规则 6]  文档同步 - 保持文档与代码同步
+✅ [规则 7]  测试覆盖率要求 - 保持代码质量
+✅ [规则 8]  部署前检查清单 - Electron 打包前验证
 ✅ [规则 9]  破坏性变更协议 - 清楚地记录破坏性变更
 ✅ [规则 10] 依赖更新策略 - 安全地管理依赖
+✅ [规则 11] 文件组织标准 - React 项目结构规范
 ✅ [规则 12] 错误处理标准 - 一致的错误处理
 
 # ============================================

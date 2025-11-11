@@ -187,10 +187,10 @@ Python：
 原因：保持一致性并遵循语言约定
 
 
-## [约定 6] 组件命名（前端）[DISABLED]
+## [约定 6] 组件命名（前端）[ENABLED]
 # UI 组件的命名（React/Vue/Angular）
 
-STATUS: DISABLED
+STATUS: ENABLED
 LANGUAGE: JavaScript/TypeScript
 说明：
 - 组件名称使用 PascalCase
@@ -301,10 +301,10 @@ LANGUAGE: All
 原因：使环境配置清晰一致
 
 
-## [约定 10] 类型/接口命名 [DISABLED]
+## [约定 10] 类型/接口命名 [ENABLED]
 # TypeScript 类型和接口的命名
 
-STATUS: DISABLED
+STATUS: ENABLED
 LANGUAGE: TypeScript
 说明：
 - 使用 PascalCase
@@ -332,10 +332,10 @@ LANGUAGE: TypeScript
 原因：提高类型系统清晰度
 
 
-## [约定 11] 事件命名 [DISABLED]
+## [约定 11] 事件命名 [ENABLED]
 # 事件和事件处理器的命名
 
-STATUS: DISABLED
+STATUS: ENABLED
 LANGUAGE: JavaScript/TypeScript
 说明：
 - 事件处理器：handleEventName 或 onEventName
@@ -359,10 +359,10 @@ LANGUAGE: JavaScript/TypeScript
 原因：使事件流清晰一致
 
 
-## [约定 12] 测试命名 [DISABLED]
+## [约定 12] 测试命名 [ENABLED]
 # 测试文件和测试用例的命名
 
-STATUS: DISABLED
+STATUS: ENABLED
 LANGUAGE: All
 说明：
 - 测试文件：匹配源文件，使用 .test 或 .spec 后缀
@@ -400,7 +400,11 @@ JavaScript/TypeScript：
 ✅ [约定 3] 类命名 - PascalCase，名词
 ✅ [约定 4] 常量命名 - UPPER_SNAKE_CASE
 ✅ [约定 5] 文件命名 - kebab-case/snake_case
+✅ [约定 6] 组件命名 - React/Vue 组件 PascalCase
 ✅ [约定 9] 环境变量命名 - UPPER_SNAKE_CASE
+✅ [约定 10] 类型/接口命名 - TypeScript 类型系统
+✅ [约定 11] 事件命名 - 事件处理器规范
+✅ [约定 12] 测试命名 - 测试文件和用例
 
 # ============================================
 # 语言特定摘要

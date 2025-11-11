@@ -115,10 +115,10 @@ STATUS: ENABLED
   Commit: Add user feature, fix payment bug, update docs
 
 
-## [规则 4] Pull Request 规范 [ENABLED]
+## [规则 4] Pull Request 规范 [DISABLED]
 # PR 创建和审查标准
 
-STATUS: ENABLED
+STATUS: DISABLED
 说明：
 - PR 标题使用与提交消息相同的格式
 - 提供清晰的描述和上下文
@@ -211,10 +211,10 @@ git branch -d release/v1.1.0
 ```
 
 
-## [规则 6] 代码审查要求 [ENABLED]
+## [规则 6] 代码审查要求 [DISABLED]
 # 强制代码审查流程
 
-STATUS: ENABLED
+STATUS: DISABLED
 说明：
 - 所有代码必须经过审查才能合并
 - 审查者应该检查：
@@ -439,10 +439,10 @@ coverage/
 ```
 
 
-## [规则 12] Commit Hooks [DISABLED]
+## [规则 12] Commit Hooks [ENABLED]
 # Git Hooks 自动化检查
 
-STATUS: DISABLED
+STATUS: ENABLED
 说明：
 - pre-commit: 代码格式化、lint 检查
 - commit-msg: 提交消息格式验证
@@ -516,14 +516,13 @@ DEPENDENCIES:
 ✅ [规则 1]  分支命名规范 - kebab-case命名约定
 ✅ [规则 2]  提交消息规范 - Conventional Commits
 ✅ [规则 3]  提交频率 - 小而频繁的提交
-✅ [规则 4]  PR 规范 - 清晰描述和审查流程
-✅ [规则 5]  分支策略 - Git Flow/GitHub Flow
-✅ [规则 6]  代码审查 - 强制审查流程
+✅ [规则 5]  分支策略 - GitHub Flow
 ✅ [规则 7]  合并策略 - 选择合适的合并方式
 ✅ [规则 8]  禁止操作 - 避免危险的Git操作
 ✅ [规则 9]  标签管理 - 语义化版本标签
 ✅ [规则 10] 冲突解决 - 合并冲突处理流程
 ✅ [规则 11] .gitignore - 忽略文件管理
+✅ [规则 12] Commit Hooks - Husky + lint-staged 自动化检查
 
 
 # ============================================

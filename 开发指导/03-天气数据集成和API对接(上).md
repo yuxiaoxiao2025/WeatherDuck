@@ -18,27 +18,117 @@
 ## 📖 适用规范清单
 
 ### 核心规范
-- **开发需求规范**
-  - [规则 1] 生成完整可运行代码
-  - [规则 6] 验证所有API是否存在
-  - [规则 7] 第一次就完全修复错误
 
-- **命名约定**
-  - [约定 1] 变量命名 (camelCase)
-  - [约定 2] 函数命名 (camelCase, 动词开头)
-  - [约定 3] 类命名 (PascalCase)
-  - [约定 4] 常量命名 (UPPER_SNAKE_CASE)
+#### 开发需求规范
+文件路径: `.qoder/rules/requirements-spec.zh-CN.md`
+
+- **[规则 1] 生成完整可运行代码** → 第20行
+- **[规则 6] 验证所有API是否存在** → 第118行
+- **[规则 7] 第一次就完全修复错误** → 第138行
+
+#### 命名约定
+文件路径: `.qoder/rules/naming-conventions.zh-CN.md`
+
+- **[约定 1] 变量命名** → 第20行 (camelCase)
+- **[约定 2] 函数命名** → 第54行 (camelCase, 动词开头)
+- **[约定 3] 类命名** → 第90行 (PascalCase)
+- **[约定 4] 常量命名** → 第118行 (UPPER_SNAKE_CASE)
+- **[约定 9] 环境变量命名** → 第277行 (UPPER_SNAKE_CASE)
 
 ### 质量规范
-- **安全规范**
-  - [规则 7] API安全
-  - [规则 8] 安全配置管理
 
-- **错误处理规范**
-  - [规则 1] 错误分类体系
-  - [规则 2] 自定义错误类
-  - [规则 6] 错误恢复策略
-  - [规则 11] 超时和限流处理
+#### 安全规范
+文件路径: `.qoder/rules/security-spec.zh-CN.md`
+
+- **[规则 8] 安全配置管理** → 第231行 (环境变量和API密钥管理)
+
+#### 错误处理规范
+文件路径: `.qoder/rules/error-handling-spec.zh-CN.md`
+
+- **[规则 1] 错误分类体系** → 第20行
+- **[规则 2] 自定义错误类** → 第91行
+- **[规则 6] 错误恢复策略** → 第216行 (API重试机制)
+- **[规则 11] 超时和限流处理** → 第457行
+
+### 和风天气API参考文档
+
+#### 和风天气错误码文档
+文件路径: `和风天气错误码.md`
+
+- **错误码v2版本** → 第8-95行
+  - INVALID PARAMETER (400): 错误的参数
+  - MISSING PARAMETER (400): 缺失参数
+  - UNAUTHORIZED (401): 身份认证失败
+  - NO CREDIT (403): 余额不足
+  - RATE LIMIT (429): 请求过多
+  - UNKNOWN ERROR (500): 服务故障
+
+- **错误码v1版本** → 第116-128行
+  - 200: 请求成功
+  - 204: 请求成功但无数据
+  - 400: 请求错误
+  - 401: 认证失败
+  - 402: 超过访问次数
+  - 429: 超过QPM限制
+
+- **错误处理要求** → 第6行
+  - 妥善处理错误,暂停请求并排查
+  - 避免持续错误请求导致账号冻结
+
+#### 和风天气API KEY使用文档
+文件路径: `和风天气的API KEY使用文档.md`
+
+- **API KEY认证方式** → 第20-31行
+  - 请求标头方式: X-QW-Api-Key: your-key
+  - 请求参数方式: key=your-key
+
+- **安全提示** → 第4行
+  - 从2027年1月1日起限制API KEY每日请求数量
+
+#### 和风天气优化请求文档
+文件路径: `和风天气优化请求.md`
+
+- **构建合法URL** → 第6-30行
+  - URL编码规范(特殊字符、中文、空格)
+  - 避免无效空格和中文符号混用
+
+- **指数退避算法** → 第43-63行
+  - 公式: t = b^c (t=等待时间, b=基数, c=错误次数)
+  - 添加随机插槽避免冲突
+  - 设置最大等待期(建议c=10)
+
+- **错误处理最佳实践** → 第35-41行
+  - 返回错误码时暂停请求
+  - 排除故障后再继续
+  - 避免大量失败请求被视为DDoS攻击
+
+#### 和风天气GeoAPI文档
+文件路径: `和风天气GeoAPI.md`
+
+- **城市搜索API** → 第13-45行
+  - 端点: /geo/v2/city/lookup
+  - 支持模糊搜索和坐标查询
+  - 行政区划过滤(adm参数)
+  - 搜索范围设置(range参数)
+
+- **返回数据结构** → 第47-227行
+  - location.id: Location ID(查询天气必需)
+  - location.name: 城市名称
+  - location.lat/lon: 经纬度
+  - location.adm1/adm2: 行政区划
+  - location.rank: 地区评分
+
+#### API_KEY配置指南
+文件路径: `API_KEY_配置指南.md`
+
+- **API Host配置** → 第125-126行
+  - 免费订阅: api.qweather.com
+  - 开发订阅: devapi.qweather.com
+
+- **错误诊断** → 第3-6行
+  - 检查API Key格式(32字符)
+  - 验证应用类型配置
+  - 检查API Host设置
 
 ---
 
@@ -47,8 +137,12 @@
 ### 步骤 3.1：配置环境变量和API密钥
 
 **适用规范**: 
-- 安全规范 [规则 8] 安全配置管理
-- 命名约定 [约定 9] 环境变量命名
+- 安全规范 [规则 8] 安全配置管理 → 第231行
+  - 不在代码中硬编码密钥，使用环境变量管理API密钥
+- 命名约定 [约定 9] 环境变量命名 (UPPER_SNAKE_CASE) → 第277行
+  - 环境变量使用UPPER_SNAKE_CASE命名规范
+- 开发需求规范 [规则 1] 生成完整可运行代码 → 第20行
+  - 提供完整的.env配置示例，包含所有必要的环境变量
 
 **更新 .env.example**:
 
@@ -82,16 +176,23 @@ VITE_DEFAULT_CITY_NAME=上海市宝山区
 ```
 
 **验收标准**:
-- [ ] 环境变量使用 VITE_ 前缀
-- [ ] 变量名使用 UPPER_SNAKE_CASE
-- [ ] API密钥不硬编码在代码中
-- [ ] .env 文件已在 .gitignore 中
+- [ ] 环境变量使用 VITE_ 前缀（Vite框架规范）
+- [ ] 变量名使用 UPPER_SNAKE_CASE（约定9：环境变量命名）
+- [ ] API密钥不硬编码在代码中（规则8：安全配置管理）
+- [ ] .env 文件已在 .gitignore 中（规则8：不提交敏感信息到版本控制）
+- [ ] 配置文件完整可用（规则1：生成完整可运行代码）
 
 ---
 
 ### 步骤 3.2：创建API配置和常量
 
-**适用规范**: 命名约定 [约定 4] 常量命名
+**适用规范**: 
+- 命名约定 [约定 4] 常量命名 → 第118行
+  - 使用 UPPER_SNAKE_CASE 命名常量
+- 开发需求规范 [规则 3] 最小化新增依赖 → 第69行
+  - 优先使用项目现有依赖（复用Vite的环境变量系统）
+- 开发需求规范 [规则 10] 确保代码成功编译 → 第171行
+  - 验证API配置，确保代码可正常运行
 
 **创建 src/config/api-config.ts**:
 
@@ -153,17 +254,24 @@ export function validateApiConfig(): boolean {
 ```
 
 **验收标准**:
-- [ ] 所有常量使用 UPPER_SNAKE_CASE
+- [ ] 所有常量使用 UPPER_SNAKE_CASE（约定4）
 - [ ] 使用 as const 确保类型安全
-- [ ] API配置验证函数正常工作
+- [ ] API配置验证函数正常工作（规则10：确保可运行）
+- [ ] 复用Vite环境变量系统（规则3：最小化依赖）
 
 ---
 
 ### 步骤 3.3：创建自定义错误类
 
 **适用规范**: 
-- 错误处理规范 [规则 1] 错误分类体系
-- 错误处理规范 [规则 2] 自定义错误类
+- 错误处理规范 [规则 1] 错误分类体系 → 第20行
+  - 建立清晰的错误分类：业务错误、系统错误、第三方错误
+- 错误处理规范 [规则 2] 自定义错误类 → 第91行
+  - 创建领域特定的错误类，继承标准Error类
+- 命名约定 [约定 3] 类命名 (PascalCase) → 第90行
+  - 错误类使用PascalCase命名
+- 命名约定 [约定 4] 常量命名 (UPPER_SNAKE_CASE) → 第118行
+  - 错误码常量使用UPPER_SNAKE_CASE命名
 
 **创建 src/utils/errors.ts**:
 
@@ -276,18 +384,27 @@ export const ERROR_CODES = {
 ```
 
 **验收标准**:
-- [ ] 错误类继承关系正确
-- [ ] 错误分类清晰（业务、系统、第三方）
-- [ ] 错误码使用 UPPER_SNAKE_CASE
+- [ ] 错误类继承关系正确（规则2：自定义错误类继承BaseError）
+- [ ] 错误分类清晰（规则1：业务、系统、第三方错误分类）
+- [ ] 错误码使用 UPPER_SNAKE_CASE（约定4：常量命名规范）
+- [ ] 类名使用 PascalCase（约定3：BaseError、ApiError等）
+- [ ] 错误类功能完整（规则1：包含必要的错误信息和上下文）
 
 ---
 
 ### 步骤 3.4：创建HTTP客户端
 
 **适用规范**: 
-- 安全规范 [规则 7] API安全
-- 错误处理规范 [规则 6] 错误恢复策略
-- 错误处理规范 [规则 11] 超时和限流处理
+- 错误处理规范 [规则 6] 错误恢复策略 → 第216行
+  - 实施重试机制和指数退避策略
+- 错误处理规范 [规则 11] 超时和限流处理 → 第457行
+  - 所有外部调用设置超时，使用AbortController实现
+- 命名约定 [约定 3] 类命名 (PascalCase) → 第90行
+  - HttpClient类使用PascalCase
+- 命名约定 [约定 2] 函数命名 (camelCase) → 第54行
+  - 方法名使用camelCase，动词开头（get、post、fetchWithRetry等）
+- 开发需求规范 [规则 1] 生成完整可运行代码 → 第20行
+  - 提供完整的HTTP客户端实现，包含GET/POST方法
 
 **创建 src/services/http-client.ts**:
 
@@ -478,16 +595,28 @@ export class HttpClient {
 ```
 
 **验收标准**:
-- [ ] 实现超时机制
-- [ ] 实现重试机制（指数退避）
-- [ ] 错误处理完整
-- [ ] 方法命名符合规范
+- [ ] 实现超时机制（规则11：使用AbortController，默认10秒）
+- [ ] 实现重试机制（规则6：指数退避策略，最多3次重试）
+- [ ] 错误处理完整（规则6：捕获网络错误、超时错误、API错误）
+- [ ] 方法命名符合规范（约定2：get、post、fetchWithRetry使用camelCase）
+- [ ] 类名符合规范（约定3：HttpClient使用PascalCase）
+- [ ] 代码可立即运行（规则1：完整实现，无TODO）
 
 ---
 
 ### 步骤 3.5：创建数据缓存管理器
 
-**适用规范**: 命名约定 [约定 3] 类命名
+**适用规范**: 
+- 命名约定 [约定 3] 类命名 (PascalCase) → 第90行
+  - CacheManager类使用PascalCase
+- 命名约定 [约定 2] 函数命名 (camelCase) → 第54行
+  - 方法名使用camelCase（get、set、has、delete、clear等）
+- 命名约定 [约定 10] 类型/接口命名 (PascalCase) → 第315行
+  - CacheEntry接口使用PascalCase
+- 开发需求规范 [规则 1] 生成完整可运行代码 → 第20行
+  - 提供完整的缓存管理器实现
+- 开发需求规范 [规则 9] 功能优先于完美 → 第163行
+  - 先实现基本的缓存功能，使用简单的Map数据结构
 
 **创建 src/utils/cache-manager.ts**:
 
@@ -593,16 +722,26 @@ export class CacheManager {
 ```
 
 **验收标准**:
-- [ ] 类名使用 PascalCase
-- [ ] 方法名使用 camelCase
-- [ ] 缓存过期机制正常
-- [ ] 支持自定义过期时间
+- [ ] 类名使用 PascalCase（约定3：CacheManager）
+- [ ] 方法名使用 camelCase（约定2：get、set、has等）
+- [ ] 缓存过期机制正常（规则1：完整实现过期检查逻辑）
+- [ ] 支持自定义过期时间（规则1：支持duration参数）
+- [ ] 接口定义完整（约定10：CacheEntry接口使用PascalCase）
+- [ ] 代码可立即使用（规则1：无占位符，功能完整）
 
 ---
 
 ### 步骤 3.6：创建TypeScript类型定义
 
-**适用规范**: 命名约定 [约定 10] 类型/接口命名
+**适用规范**: 
+- 命名约定 [约定 10] 类型/接口命名 (PascalCase) → 第315行
+  - 接口和类型使用PascalCase（QWeatherResponse、CurrentWeather等）
+- 开发需求规范 [规则 6] 验证所有API是否存在 → 第118行
+  - 根据和风天气官方API文档定义类型，确保字段准确
+- 开发需求规范 [规则 1] 生成完整可运行代码 → 第20行
+  - 提供完整的类型定义，覆盖所有API响应字段
+- 命名约定 [约定 1] 变量命名 (camelCase) → 第20行
+  - 接口属性使用camelCase（obsTime、feelsLike等）
 
 **创建 src/types/weather.ts**:
 
@@ -745,18 +884,24 @@ export interface GeoLocation {
 ```
 
 **验收标准**:
-- [ ] 接口名使用 PascalCase
-- [ ] 类型定义完整
-- [ ] 注释清晰
-- [ ] 与API文档保持一致
+- [ ] 接口名使用 PascalCase（约定10：CurrentWeather、WeatherForecast等）
+- [ ] 类型定义完整（规则1：覆盖所有API响应字段，无缺失）
+- [ ] 注释清晰（规则8：每个字段都有中文注释说明）
+- [ ] 与API文档保持一致（规则6：根据和风天气官方文档定义）
+- [ ] 属性命名符合规范（约定1：使用camelCase）
+- [ ] 泛型类型定义正确（约定10：QWeatherResponse<T>）
 
 ---
 
 ### 步骤 3.7：创建天气服务
 
 **适用规范**: 
-- 开发需求规范 [规则 6] 验证所有API是否存在
-- 命名约定 [约定 2] 函数命名
+- 开发需求规范 [规则 6] 验证所有API是否存在 → 第118行
+  - 使用前验证API是否存在，检查响应code
+- 开发需求规范 [规则 13] 只使用真实存在的库 → 第199行
+  - 和风天气API已通过官方文档验证
+- 命名约定 [约定 2] 函数命名 → 第54行
+  - 方法名使用camelCase，动词开头
 
 **创建 src/services/weather-service.ts**:
 
@@ -909,10 +1054,13 @@ export class WeatherService {
 ```
 
 **验收标准**:
-- [ ] 类名使用 PascalCase
-- [ ] 方法名使用 camelCase
-- [ ] 实现缓存机制
-- [ ] 错误处理完整
+- [ ] 类名使用 PascalCase（约定3：WeatherService）
+- [ ] 方法名使用 camelCase（约定2：getCurrentWeather、getWeatherForecast等动词开头）
+- [ ] 实现缓存机制（规则2：复用CacheManager类）
+- [ ] 错误处理完整（规则6：检查API响应code，处理错误情况）
+- [ ] API验证正确（规则6：验证response.code是否为'200'）
+- [ ] 使用真实API（规则13：和风天气API已通过官方文档验证）
+- [ ] 代码可立即运行（规则1：完整实现，包含所有必要的import和配置）
 
 ---
 
@@ -932,8 +1080,44 @@ export class WeatherService {
 
 ---
 
+---
+
+## 📚 规范文件快速参考
+
+本文档引用的所有规范条款详见:
+
+| 规范类别 | 文件路径 | 规则编号 | 起始行 |
+|---------|---------|---------|--------|
+| 开发需求规范 | `.qoder/rules/requirements-spec.zh-CN.md` | 规则 1 | 第20行 |
+| 开发需求规范 | `.qoder/rules/requirements-spec.zh-CN.md` | 规则 6 | 第118行 |
+| 开发需求规范 | `.qoder/rules/requirements-spec.zh-CN.md` | 规则 7 | 第138行 |
+| 命名约定 | `.qoder/rules/naming-conventions.zh-CN.md` | 约定 1 | 第20行 |
+| 命名约定 | `.qoder/rules/naming-conventions.zh-CN.md` | 约定 2 | 第54行 |
+| 命名约定 | `.qoder/rules/naming-conventions.zh-CN.md` | 约定 3 | 第90行 |
+| 命名约定 | `.qoder/rules/naming-conventions.zh-CN.md` | 约定 4 | 第118行 |
+| 命名约定 | `.qoder/rules/naming-conventions.zh-CN.md` | 约定 9 | 第277行 |
+| 安全规范 | `.qoder/rules/security-spec.zh-CN.md` | 规则 8 | 第231行 |
+| 错误处理规范 | `.qoder/rules/error-handling-spec.zh-CN.md` | 规则 1 | 第20行 |
+| 错误处理规范 | `.qoder/rules/error-handling-spec.zh-CN.md` | 规则 2 | 第91行 |
+| 错误处理规范 | `.qoder/rules/error-handling-spec.zh-CN.md` | 规则 6 | 第216行 |
+| 错误处理规范 | `.qoder/rules/error-handling-spec.zh-CN.md` | 规则 11 | 第457行 |
+| 和风天气错误码 | `和风天气错误码.md` | 错误码v2 | 第8-95行 |
+| 和风天气错误码 | `和风天气错误码.md` | 错误码v1 | 第116-128行 |
+| API KEY使用 | `和风天气的API KEY使用文档.md` | 认证方式 | 第20-31行 |
+| 优化请求 | `和风天气优化请求.md` | URL编码 | 第6-30行 |
+| 优化请求 | `和风天气优化请求.md` | 指数退避 | 第43-63行 |
+| GeoAPI | `和风天气GeoAPI.md` | 城市搜索 | 第13-45行 |
+| GeoAPI | `和风天气GeoAPI.md` | 返回数据 | 第47-227行 |
+| API配置指南 | `API_KEY_配置指南.md` | Host配置 | 第125-126行 |
+
+**使用方法**:
+1. 在IDE中使用 `Ctrl+G` (或 `Cmd+G`) 跳转到指定行号
+2. 或在Qoder中使用 `@文件路径` 直接打开规范文件
+
+---
+
 **文档版本**: v1.0  
 **更新日期**: 2024-01-01  
 **维护团队**: 天气鸭开发团队
 
-*注：由于文档较长，步骤3.8-3.12 和完整的验收清单请见文档下一部分*
+*注:由于文档较长,步骤3.8-3.12 和完整的验收清单请见文档下一部分*

@@ -51,10 +51,10 @@ PRIORITY: CRITICAL
   element.innerHTML = DOMPurify.sanitize(userInput);
 
 
-## [规则 2] 认证与授权 [ENABLED]
+## [规则 2] 认证与授权 [DISABLED]
 # 实施强认证和细粒度授权
 
-STATUS: ENABLED
+STATUS: DISABLED
 PRIORITY: CRITICAL
 说明：
 - 使用成熟的认证库（Passport.js、Spring Security）
@@ -203,10 +203,10 @@ STATUS: ENABLED
   logger.warn(`登录失败: ${email}, IP: ${req.ip}`);
 
 
-## [规则 7] API 安全 [ENABLED]
+## [规则 7] API 安全 [DISABLED]
 # 保护 API 端点安全
 
-STATUS: ENABLED
+STATUS: DISABLED
 说明：
 - 实施速率限制（Rate Limiting）防止暴力破解
 - 使用 API 密钥或 JWT 令牌认证
@@ -261,10 +261,10 @@ STATUS: ENABLED
   .env.local
 
 
-## [规则 9] 会话管理安全 [ENABLED]
+## [规则 9] 会话管理安全 [DISABLED]
 # 安全管理用户会话
 
-STATUS: ENABLED
+STATUS: DISABLED
 说明：
 - 会话 ID 随机生成，不可预测
 - 登录后重新生成会话 ID
@@ -288,10 +288,10 @@ app.use(session({
 ```
 
 
-## [规则 10] 文件上传安全 [ENABLED]
+## [规则 10] 文件上传安全 [DISABLED]
 # 安全处理文件上传
 
-STATUS: ENABLED
+STATUS: DISABLED
 说明：
 - 验证文件类型（MIME type 和扩展名双重验证）
 - 限制文件大小
@@ -401,16 +401,12 @@ DEPENDENCIES:
 # 摘要 - 启用的规则
 # ============================================
 
-✅ [规则 1]  输入验证与清理 - 防止注入攻击
-✅ [规则 2]  认证与授权 - 强认证细粒度授权
-✅ [规则 3]  敏感数据保护 - 加密存储和传输
+✅ [规则 1]  输入验证与清理 - 防止注入攻击（城市搜索输入）
+✅ [规则 3]  敏感数据保护 - 加密存储和传输（API密钥）
 ✅ [规则 4]  依赖安全管理 - 审计更新依赖
-✅ [规则 5]  OWASP Top 10 防护 - 防护常见漏洞
+✅ [规则 5]  OWASP Top 10 防护 - XSS防护
 ✅ [规则 6]  日志安全 - 不泄露敏感信息
-✅ [规则 7]  API 安全 - 速率限制和认证
-✅ [规则 8]  安全配置管理 - 不硬编码密钥
-✅ [规则 9]  会话管理安全 - 安全会话配置
-✅ [规则 10] 文件上传安全 - 验证和隔离
+✅ [规则 8]  安全配置管理 - 不硬编码密钥（.env文件）
 ✅ [规则 11] 错误处理安全 - 不暴露内部信息
 
 
