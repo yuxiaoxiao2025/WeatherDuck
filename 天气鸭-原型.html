@@ -1,0 +1,1691 @@
+<!DOCTYPE html><html lang="zh"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天气鸭 - 现代天气应用</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* 时钟样式 */
+    .clock-container {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 16px 20px;
+      box-shadow: 0 8px 16px rgba(6, 132, 255, 0.1);
+      text-align: center;
+    }
+    
+    .digital-clock {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #1e40af;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+    }
+    
+    .clock-date {
+      font-size: 1rem;
+      color: #3b82f6;
+      margin-top: 8px;
+    }
+    
+    /* 布谷鸟动画 */
+    .cuckoo-bird {
+      display: inline-block;
+      transition: all 0.3s ease;
+      animation: cuckoo-idle 3s ease-in-out infinite;
+    }
+    
+    .cuckoo-bird.active {
+      animation: cuckoo-announce 0.5s ease-in-out 3;
+    }
+    
+    @keyframes cuckoo-idle {
+      0%, 100% { transform: rotate(-5deg) scale(1); }
+      50% { transform: rotate(5deg) scale(1.05); }
+    }
+    
+    @keyframes cuckoo-announce {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.3) rotate(10deg); }
+    }
+    
+    /* 报时提示 */
+    .time-announcement {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(59, 130, 246, 0.95);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .time-announcement.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px 0;
+    }
+    
+    /* 增强动画的全局设置 */
+    * {
+      transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    
+    .app-container {
+      width: 375px;
+      height: 812px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      background: linear-gradient(180deg, #f0f8ff 0%, #d3e8ff 100%);
+      position: relative;
+    }
+    
+    .fixed-section {
+      flex-shrink: 0;
+    }
+    
+    .content-flex {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding: 0 20px;
+      padding-bottom: 10px;
+    }
+    
+    .current-weather {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 24px;
+      margin-top: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 16px rgba(6, 132, 255, 0.1);
+    }
+    
+    .weather-card {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(6, 132, 255, 0.08);
+      transition: all 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+      position: relative;
+    }
+    
+    .weather-card:hover {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 8px 22px rgba(6, 132, 255, 0.18);
+    }
+    
+    .weather-card:active {
+      transform: translateY(-1px) scale(0.99);
+    }
+    
+    .weather-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 16px;
+      box-shadow: 0 0 0 0px rgba(41, 182, 246, 0);
+      transition: box-shadow 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+      z-index: -1;
+    }
+    
+    .weather-card:hover::before {
+      box-shadow: 0 0 0 3px rgba(41, 182, 246, 0.2);
+    }
+    
+    .forecast-container {
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 15px;
+      gap: 12px;
+    }
+    
+    .forecast-container::-webkit-scrollbar { 
+      display: none;
+    }
+    
+    .forecast-day {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 16px;
+      min-width: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(6, 132, 255, 0.08);
+      transition: all 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .forecast-day:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(6, 132, 255, 0.16);
+    }
+    
+    .forecast-day::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    .forecast-day:hover::after {
+      opacity: 1;
+    }
+    
+    .icon-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      margin-bottom: 12px;
+    }
+    
+    /* 自定义图标颜色和动画 */
+    .sun-icon {
+      color: #FFB300;
+      font-size: 32px;
+      animation: rotate 20s linear infinite;
+    }
+    
+    .wind-icon {
+      color: #29B6F6;
+      font-size: 24px;
+      animation: breeze 3s ease-in-out infinite;
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes breeze {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(3px); }
+      100% { transform: translateX(0); }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes rain {
+      0% { transform: translateY(0); opacity: 0.8; }
+      70% { transform: translateY(8px); opacity: 0.9; }
+      100% { transform: translateY(10px); opacity: 0; }
+    }
+    
+    @keyframes cloud-float {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+    
+    .tab-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tab-button.active {
+      background: rgba(41, 182, 246, 0.15);
+    }
+    
+    .tab-button:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: #29B6F6;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    
+    .tab-button.active:after {
+      width: 70%;
+      left: 15%;
+    }
+    
+    .tab-button:active {
+      transform: scale(0.95);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+    
+    /* 加载动画 */
+    @keyframes shimmer {
+      0% { background-position: -468px 0; }
+      100% { background-position: 468px 0; }
+    }
+    
+    .loading-shimmer {
+      background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+      background-size: 800px 104px;
+      animation: shimmer 1.5s infinite linear;
+      position: relative;
+    }
+    
+    .delayed-1 {
+      animation-delay: 0.1s;
+    }
+    
+    .delayed-2 {
+      animation-delay: 0.2s;
+    }
+    
+    .delayed-3 {
+      animation-delay: 0.3s;
+    }
+    
+    .humidity-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(211, 223, 240, 0.6);
+      border-radius: 3px;
+      margin-top: 5px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .humidity-level {
+      height: 6px;
+      background: linear-gradient(90deg, #29B6F6, #0288D1);
+      border-radius: 3px;
+      transition: width 1.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    
+
+    
+    /* 设置面板样式 */
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .settings-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .settings-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 24px;
+      width: 320px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    
+    .settings-overlay.show .settings-panel {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    
+    .settings-section {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(6, 132, 255, 0.08);
+    }
+    
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    }
+    
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: #cbd5e1;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    
+    .toggle-switch.active {
+      background: #3b82f6;
+    }
+    
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+    
+    .toggle-switch.active::after {
+      transform: translateX(26px);
+    }
+    
+    .range-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+    }
+    
+    .select-dropdown {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #1e40af;
+      font-size: 14px;
+    }
+    
+    /* 城市搜索相关样式 */
+    .city-search-input {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #1e40af;
+      font-size: 14px;
+      width: 200px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    .city-search-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    
+    .location-btn {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px;
+      color: #3b82f6;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .location-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+    }
+    
+    .city-suggestions-list {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(6, 132, 255, 0.1);
+    }
+    
+    .city-suggestion-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+      transition: background 0.2s ease;
+    }
+    
+    .city-suggestion-item:hover {
+      background: rgba(59, 130, 246, 0.1);
+    }
+    
+    .city-suggestion-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 标题栏区域 -->
+    <header class="fixed-section bg-gradient-to-r from-blue-500 to-blue-400 py-4 px-6 flex justify-between items-center h-[56px]">
+      <div class="flex items-center space-x-3">
+        <div class="app-icon">
+          <span class="iconify text-white text-2xl" data-icon="fluent-emoji:duck"></span>
+        </div>
+        <div>
+          <h1 class="text-white text-xl font-bold tracking-wider">天气鸭</h1>
+          <p class="text-blue-100 text-xs">智能天气助手</p>
+        </div>
+      </div>
+      <div class="flex space-x-2">
+        <button class="flex items-center justify-center w-9 h-9 rounded-full bg-white bg-opacity-20 transition hover:bg-opacity-30" onclick="refreshWeather()">
+          <span class="iconify text-white text-lg" data-icon="material-symbols:refresh"></span>
+        </button>
+        <button class="flex items-center justify-center w-9 h-9 rounded-full bg-white bg-opacity-20 transition hover:bg-opacity-30" onclick="toggleSettings()">
+          <span class="iconify text-white text-lg" data-icon="material-symbols:settings"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 时钟组件 -->
+    <div class="clock-container">
+      <div class="flex items-center justify-center space-x-3 mb-2">
+        <span class="cuckoo-bird" id="cuckoo-bird">
+          <span class="iconify text-2xl" data-icon="fluent-emoji:bird"></span>
+        </span>
+        <div class="digital-clock" id="digital-clock">00:00:00</div>
+      </div>
+      <div class="clock-date" id="clock-date">2024年1月1日 星期一</div>
+    </div>
+
+    <!-- 报时提示 -->
+    <div class="time-announcement" id="time-announcement">
+      布谷！布谷！现在是 <span id="announcement-time"></span>
+    </div>
+
+    <!-- 主要内容区 -->
+      <main class="content-flex hide-scrollbar">
+      <!-- 当前天气概览 -->
+      <section class="current-weather fade-in animated">
+        <div class="flex justify-between items-start">
+          <div>
+            <h2 class="text-blue-800 text-lg font-medium">上海市宝山区</h2>
+            <p class="text-blue-600 mt-1">2025年10月10日 星期五</p>
+            <div class="flex items-center mt-4">
+              <div class="text-5xl font-bold text-blue-900">26°</div>
+              <div class="ml-4">
+                <span class="sun-icon iconify text-yellow-400" data-icon="wi:day-sunny" style="font-size: 48px; animation: rotate 20s linear infinite;"></span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="text-yellow-600 bg-yellow-100 px-4 py-2 rounded-full text-xs font-bold inline-flex items-center">
+              <span class="iconify mr-1" data-icon="mdi:weather-sunny-alert"></span>
+              <span>紫外线较强</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 详细天气卡片组 -->
+      <section class="grid grid-cols-2 gap-3 mb-5">
+        <!-- 卡片1: 湿度 -->
+        <div class="weather-card fade-in delayed-1">
+          <div class="flex items-center">
+            <div class="rounded-lg p-2 bg-blue-100 mr-3">
+              <span class="iconify text-blue-500" data-icon="wi:humidity" style="font-size: 24px;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">湿度</div>
+              <div class="text-xl font-bold text-blue-800" id="humidity-value">0%</div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="humidity-bar">
+              <div class="humidity-level" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 卡片2: 风速和气压 -->
+        <div class="weather-card fade-in delayed-1">
+          <div class="flex items-center mb-4">
+            <div class="rounded-lg p-2 bg-blue-100 mr-3">
+              <span class="wind-icon iconify" data-icon="wi:strong-wind" style="animation: breeze 3s ease-in-out infinite;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">风速</div>
+              <div class="text-xl font-bold text-blue-800">18km/h</div>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <div class="rounded-lg p-2 bg-blue-100 mr-3">
+              <span class="iconify text-purple-400" data-icon="wi:barometer" style="font-size: 20px;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">气压</div>
+              <div class="text-xl font-bold text-blue-800">1013hPa</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 卡片3: 体感温度和能见度 -->
+        <div class="weather-card fade-in delayed-2">
+          <div class="flex items-center mb-4">
+            <div class="rounded-lg p-2 bg-blue-100 mr-3">
+              <span class="iconify text-amber-500" data-icon="wi:thermometer" style="font-size: 24px;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">体感温度</div>
+              <div class="text-xl font-bold text-blue-800">28°</div>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <div class="rounded-lg p-2 bg-blue-100 mr-3">
+              <span class="iconify text-blue-400" data-icon="wi:day-fog" style="font-size: 24px;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">能见度</div>
+              <div class="text-xl font-bold text-blue-800">12km</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 卡片4: 日出日落 -->
+        <div class="weather-card fade-in delayed-2">
+          <div class="flex items-center mb-4">
+            <div class="rounded-lg p-2 bg-orange-100 mr-3">
+              <span class="iconify text-amber-500" data-icon="wi:sunrise" style="font-size: 24px;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">日出</div>
+              <div class="text-xl font-bold text-blue-800">06:32</div>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <div class="rounded-lg p-2 bg-purple-100 mr-3">
+              <span class="iconify text-purple-500" data-icon="wi:sunset" style="font-size: 24px;"></span>
+            </div>
+            <div>
+              <div class="text-sm text-blue-600 font-medium">日落</div>
+              <div class="text-xl font-bold text-blue-800">18:05</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 天气预报时间轴 -->
+      <section>
+        <h3 class="text-lg font-bold text-blue-800 mb-4 fade-in delayed-3">未来7天预报</h3>
+        <div class="forecast-container fade-in delayed-3">
+          <div class="forecast-day">
+            <div class="text-blue-700 text-sm font-medium">今天</div>
+            <div class="icon-container my-2">
+              <span class="sun-icon iconify" data-icon="wi:day-sunny"></span>
+            </div>
+            <div class="text-blue-800 font-bold text-lg">26°</div>
+            <div class="text-blue-500 text-xs mt-1">20°</div>
+          </div>
+          
+          <div class="forecast-day">
+            <div class="text-blue-700 text-sm font-medium">周六</div>
+            <div class="icon-container my-2">
+              <span class="iconify text-blue-400" data-icon="wi:day-cloudy"></span>
+            </div>
+            <div class="text-blue-800 font-bold text-lg">24°</div>
+            <div class="text-blue-500 text-xs mt-1">18°</div>
+          </div>
+          
+          <div class="forecast-day">
+            <div class="text-blue-700 text-sm font-medium">周日</div>
+            <div class="icon-container my-2">
+              <span class="iconify text-blue-400" data-icon="wi:rain"></span>
+            </div>
+            <div class="text-blue-800 font-bold text-lg">21°</div>
+            <div class="text-blue-500 text-xs mt-1">17°</div>
+          </div>
+          
+          <div class="forecast-day">
+            <div class="text-blue-700 text-sm font-medium">周一</div>
+            <div class="icon-container my-2">
+              <span class="iconify text-blue-400" data-icon="wi:showers"></span>
+            </div>
+            <div class="text-blue-800 font-bold text-lg">20°</div>
+            <div class="text-blue-500 text-xs mt-1">16°</div>
+          </div>
+          
+          <div class="forecast-day">
+            <div class="text-blue-700 text-sm font-medium">周二</div>
+            <div class="icon-container my-2">
+              <span class="iconify text-blue-400" data-icon="wi:day-sunny-overcast"></span>
+            </div>
+            <div class="text-blue-800 font-bold text-lg">23°</div>
+            <div class="text-blue-500 text-xs mt-1">17°</div>
+          </div>
+          
+          <div class="forecast-day">
+            <div class="text-blue-700 text-sm font-medium">周三</div>
+            <div class="icon-container my-2">
+              <span class="sun-icon iconify" data-icon="wi:day-sunny"></span>
+            </div>
+            <div class="text-blue-800 font-bold text-lg">25°</div>
+            <div class="text-blue-500 text-xs mt-1">19°</div>
+          </div>
+        </div>
+      </section>
+        
+
+      </main>
+
+
+  </div>
+
+  <!-- 设置面板弹出层 -->
+  <div class="settings-overlay" id="settings-overlay" onclick="closeSettingsIfClickOutside(event)">
+    <div class="settings-panel" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-blue-900">设置</h2>
+        <button class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 transition" onclick="toggleSettings()">
+          <span class="iconify text-blue-600" data-icon="material-symbols:close"></span>
+        </button>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="text-lg font-bold text-blue-900 mb-4">时钟设置</h3>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">显示时钟</span>
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'clock-display')"></div>
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">时钟样式</span>
+          <select class="select-dropdown" onchange="changeClockStyle(this.value)">
+            <option value="digital">数字时钟</option>
+            <option value="analog">模拟时钟</option>
+          </select>
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">24小时制</span>
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'hour-format')"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="text-lg font-bold text-blue-900 mb-4">布谷鸟报时</h3>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">启用报时</span>
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'cuckoo-enabled')"></div>
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">报时音量</span>
+          <input type="range" class="range-slider" min="0" max="100" value="70" onchange="updateVolume(this.value)">
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">报时时间段</span>
+          <div class="flex space-x-2">
+            <select class="select-dropdown" onchange="updateTimeRange('start', this.value)">
+              <option value="6">06:00</option>
+              <option value="7">07:00</option>
+              <option value="8" selected>08:00</option>
+              <option value="9">09:00</option>
+            </select>
+            <span class="text-blue-800">至</span>
+            <select class="select-dropdown" onchange="updateTimeRange('end', this.value)">
+              <option value="20">20:00</option>
+              <option value="21">21:00</option>
+              <option value="22" selected>22:00</option>
+              <option value="23">23:00</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">音效类型</span>
+          <select class="select-dropdown" onchange="changeSoundType(this.value)">
+            <option value="classic">经典布谷鸟</option>
+            <option value="modern">现代音效</option>
+            <option value="nature">自然鸟鸣</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="text-lg font-bold text-blue-900 mb-4">位置设置</h3>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">当前城市</span>
+          <div class="flex items-center gap-2">
+            <input type="text" id="city-search" class="city-search-input" placeholder="搜索城市..." onkeyup="searchCity(this.value)" />
+            <button class="location-btn" onclick="getCurrentLocation()" title="获取当前位置">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="settings-item" id="city-suggestions" style="display: none;">
+          <div class="city-suggestions-list">
+            <!-- 城市搜索结果将在这里显示 -->
+          </div>
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">自动定位</span>
+          <div class="toggle-switch" onclick="toggleSetting(this, 'auto-location')"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="text-lg font-bold text-blue-900 mb-4">其他设置</h3>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">遵循系统音量</span>
+          <div class="toggle-switch" onclick="toggleSetting(this, 'system-volume')"></div>
+        </div>
+        
+        <div class="settings-item">
+          <span class="text-blue-800">动画效果</span>
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'animations')"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 应用设置
+    const appSettings = {
+      clockDisplay: true,
+      clockStyle: 'digital',
+      hourFormat: true, // true = 24小时制, false = 12小时制
+      cuckooEnabled: true,
+      cuckooVolume: 70,
+      cuckooStartTime: 8,
+      cuckooEndTime: 22,
+      soundType: 'classic',
+      systemVolume: false,
+      animations: true,
+      currentCity: '上海市宝山区',
+      currentCityInfo: null, // 存储完整的城市信息，包括Location ID
+      currentLocation: null, // 存储当前地理坐标
+      autoLocation: false,
+      // Location ID管理
+      locationHistory: [], // 最近搜索的城市历史
+      favoriteLocations: [] // 收藏的城市列表
+    };
+
+    // 时钟更新函数
+    function updateClock() {
+      const now = new Date();
+      const clockElement = document.getElementById('digital-clock');
+      const dateElement = document.getElementById('clock-date');
+      
+      if (!clockElement || !dateElement) return;
+      
+      // 格式化时间
+      let hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      
+      let timeString;
+      if (appSettings.hourFormat) {
+        // 24小时制
+        timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        // 12小时制
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm}`;
+      }
+      
+      clockElement.textContent = timeString;
+      
+      // 格式化日期
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const date = now.getDate().toString().padStart(2, '0');
+      const weekday = weekdays[now.getDay()];
+      
+      dateElement.textContent = `${year}年${month}月${date}日 ${weekday}`;
+      
+      // 检查是否需要报时
+      checkCuckooTime(now);
+    }
+
+    // 布谷鸟报时检查
+    function checkCuckooTime(now) {
+      if (!appSettings.cuckooEnabled) return;
+      
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      
+      // 只在整点报时，且在设定的时间范围内
+      if (minutes === 0 && seconds === 0 && 
+          hours >= appSettings.cuckooStartTime && 
+          hours <= appSettings.cuckooEndTime) {
+        triggerCuckooAnnouncement(hours);
+      }
+    }
+
+    // 触发布谷鸟报时
+    function triggerCuckooAnnouncement(hour) {
+      const cuckoo = document.getElementById('cuckoo-bird');
+      const announcement = document.getElementById('time-announcement');
+      const announcementTime = document.getElementById('announcement-time');
+      
+      if (!cuckoo || !announcement || !announcementTime) return;
+      
+      // 设置报时文本
+      const hourText = appSettings.hourFormat ? 
+        `${hour.toString().padStart(2, '0')}:00` : 
+        `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`;
+      announcementTime.textContent = hourText;
+      
+      // 播放布谷鸟动画
+      cuckoo.classList.add('active');
+      
+      // 显示报时提示
+      announcement.classList.add('show');
+      
+      // 模拟音效播放（在实际应用中这里会播放真实音频）
+      console.log(`布谷鸟报时: ${hourText}, 音量: ${appSettings.cuckooVolume}%, 音效: ${appSettings.soundType}`);
+      
+      // 3秒后隐藏提示和停止动画
+      setTimeout(() => {
+        cuckoo.classList.remove('active');
+        announcement.classList.remove('show');
+      }, 3000);
+    }
+
+    // 设置面板切换
+    function toggleSettings() {
+      const settingsOverlay = document.getElementById('settings-overlay');
+      settingsOverlay.classList.toggle('show');
+    }
+
+    // 点击外部关闭设置面板
+    function closeSettingsIfClickOutside(event) {
+      if (event.target === event.currentTarget) {
+        toggleSettings();
+      }
+    }
+
+    // 切换设置开关
+    function toggleSetting(element, settingKey) {
+      element.classList.toggle('active');
+      const isActive = element.classList.contains('active');
+      
+      switch(settingKey) {
+        case 'clock-display':
+          appSettings.clockDisplay = isActive;
+          const clockContainer = document.querySelector('.clock-container');
+          if (clockContainer) {
+            clockContainer.style.display = isActive ? 'block' : 'none';
+          }
+          break;
+        case 'hour-format':
+          appSettings.hourFormat = isActive;
+          break;
+        case 'cuckoo-enabled':
+          appSettings.cuckooEnabled = isActive;
+          break;
+        case 'system-volume':
+          appSettings.systemVolume = isActive;
+          break;
+        case 'animations':
+          appSettings.animations = isActive;
+          break;
+      }
+      
+      console.log(`设置更新: ${settingKey} = ${isActive}`);
+    }
+
+    // 更新音量
+    function updateVolume(value) {
+      appSettings.cuckooVolume = parseInt(value);
+      console.log(`音量设置: ${value}%`);
+    }
+
+    // 更新时间范围
+    function updateTimeRange(type, value) {
+      if (type === 'start') {
+        appSettings.cuckooStartTime = parseInt(value);
+      } else {
+        appSettings.cuckooEndTime = parseInt(value);
+      }
+      console.log(`报时时间范围: ${appSettings.cuckooStartTime}:00 - ${appSettings.cuckooEndTime}:00`);
+    }
+
+    // 更改时钟样式
+    function changeClockStyle(style) {
+      appSettings.clockStyle = style;
+      console.log(`时钟样式: ${style}`);
+      // 在实际应用中，这里会切换时钟的显示样式
+    }
+
+    // 更改音效类型
+    function changeSoundType(type) {
+      appSettings.soundType = type;
+      console.log(`音效类型: ${type}`);
+    }
+
+    // 刷新天气
+    function refreshWeather() {
+      console.log('刷新天气数据...');
+      // 这里可以添加天气数据刷新逻辑
+      
+      // 模拟刷新动画
+      const refreshBtn = document.querySelector('[onclick="refreshWeather()"]');
+      if (refreshBtn) {
+        const icon = refreshBtn.querySelector('.iconify, iconify-icon');
+        if (icon) {
+          icon.style.transform = 'rotate(360deg)';
+          icon.style.transition = 'transform 0.5s ease';
+          setTimeout(() => {
+            icon.style.transform = 'rotate(0deg)';
+          }, 500);
+        }
+      }
+    }
+
+    // 初始化所有动态交互效果
+      document.addEventListener('DOMContentLoaded', function() {
+        // 启动时钟
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // 添加测试布谷鸟报时的按钮（开发测试用）
+        const cuckoo = document.getElementById('cuckoo-bird');
+        if (cuckoo) {
+          cuckoo.addEventListener('click', function() {
+            const now = new Date();
+            triggerCuckooAnnouncement(now.getHours());
+          });
+        }
+      // 卡片悬停动画
+      const cards = document.querySelectorAll('.weather-card');
+      cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-5px)';
+          this.style.boxShadow = '0 10px 20px rgba(6, 132, 255, 0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 4px 12px rgba(6, 132, 255, 0.08)';
+        });
+      });
+      
+      // 底部导航交互
+      const tabs = document.querySelectorAll('.tab-button');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+      
+      // 模拟湿度数据和动画加载效果
+      setTimeout(() => {
+        const humidityBar = document.querySelector('.humidity-level');
+        const humidityValue = document.getElementById('humidity-value');
+        
+        // 设置初始过渡动画
+        humidityBar.style.transition = 'width 2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        
+        // 模拟数字计数器动画
+        let count = 0;
+        const target = 62;
+        const duration = 1500; // 1.5秒
+        const frameDuration = 1000 / 60; // 假设60fps
+        const totalFrames = Math.round(duration / frameDuration);
+        const increment = target / totalFrames;
+        
+        // 启动计数器动画
+        const counter = setInterval(() => {
+          count += increment;
+          if (count >= target) {
+            count = target;
+            clearInterval(counter);
+          }
+          humidityValue.textContent = Math.floor(count) + '%';
+        }, frameDuration);
+        
+        // 启动进度条动画
+        humidityBar.style.width = '62%';
+      }, 600);
+      
+      // 天气卡片的延迟动画 - 使用60fps的高性能动画
+      document.querySelectorAll('.fade-in').forEach((el, index) => {
+        el.style.opacity = '0';
+        
+        // 使用requestAnimationFrame确保动画平滑
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            el.style.animation = `fadeIn 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) ${index * 0.15}s forwards`;
+          }, 100);
+        });
+      });
+      
+      // 增加交互元素的动画反馈
+      document.querySelectorAll('.tab-button, .weather-card, .forecast-day').forEach(el => {
+        el.addEventListener('click', function() {
+          // 添加点击时的涟漪效果
+          const ripple = document.createElement('span');
+          ripple.classList.add('ripple');
+          ripple.style.position = 'absolute';
+          ripple.style.borderRadius = '50%';
+          ripple.style.transform = 'scale(0)';
+          ripple.style.animation = 'none';
+          ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+          
+          const rect = this.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          ripple.style.width = ripple.style.height = `${size}px`;
+          ripple.style.left = `${event.clientX - rect.left - size/2}px`;
+          ripple.style.top = `${event.clientY - rect.top - size/2}px`;
+          
+          this.appendChild(ripple);
+          
+          // 强制重排以确保动画正确触发
+          void ripple.offsetWidth;
+          
+          ripple.style.animation = 'ripple 0.6s cubic-bezier(0.22, 0.61, 0.36, 1)';
+          
+          setTimeout(() => {
+            ripple.remove();
+          }, 600);
+        });
+      });
+      
+      // 为动画添加CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes ripple {
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+        
+        .tab-button, .weather-card, .forecast-day {
+          position: relative;
+          overflow: hidden;
+        }
+      `;
+      document.head.appendChild(style);
+    });
+
+    // 和风天气API配置
+    const QWEATHER_CONFIG = {
+      apiKey: '6b95a713b2854ca0b5b62ac9d9cca3bb',
+      apiHost: 'https://geoapi.qweather.com',
+      endpoints: {
+        citySearch: '/v2/city/lookup',
+        geoLocation: '/v2/city/lookup'
+      }
+    };
+
+    // 城市搜索缓存
+    const citySearchCache = new Map();
+    const cacheExpiry = 24 * 60 * 60 * 1000; // 24小时
+
+    // 城市搜索功能
+    let searchTimeout;
+    const cityDatabase = [
+      // 直辖市
+      { name: '北京市', level: '直辖市', parent: '' },
+      { name: '上海市', level: '直辖市', parent: '' },
+      { name: '上海市黄浦区', level: '区', parent: '上海市' },
+      { name: '上海市徐汇区', level: '区', parent: '上海市' },
+      { name: '上海市长宁区', level: '区', parent: '上海市' },
+      { name: '上海市静安区', level: '区', parent: '上海市' },
+      { name: '上海市普陀区', level: '区', parent: '上海市' },
+      { name: '上海市虹口区', level: '区', parent: '上海市' },
+      { name: '上海市杨浦区', level: '区', parent: '上海市' },
+      { name: '上海市闵行区', level: '区', parent: '上海市' },
+      { name: '上海市宝山区', level: '区', parent: '上海市' },
+      { name: '上海市嘉定区', level: '区', parent: '上海市' },
+      { name: '上海市浦东新区', level: '区', parent: '上海市' },
+      { name: '上海市金山区', level: '区', parent: '上海市' },
+      { name: '上海市松江区', level: '区', parent: '上海市' },
+      { name: '上海市青浦区', level: '区', parent: '上海市' },
+      { name: '上海市奉贤区', level: '区', parent: '上海市' },
+      { name: '上海市崇明区', level: '区', parent: '上海市' },
+      { name: '天津市', level: '直辖市', parent: '' },
+      { name: '重庆市', level: '直辖市', parent: '' },
+      
+      // 省会城市及主要城市
+      { name: '广东省', level: '省', parent: '' },
+      { name: '广州市', level: '市', parent: '广东省' },
+      { name: '深圳市', level: '市', parent: '广东省' },
+      { name: '珠海市', level: '市', parent: '广东省' },
+      { name: '东莞市', level: '市', parent: '广东省' },
+      { name: '佛山市', level: '市', parent: '广东省' },
+      
+      { name: '江苏省', level: '省', parent: '' },
+      { name: '南京市', level: '市', parent: '江苏省' },
+      { name: '苏州市', level: '市', parent: '江苏省' },
+      { name: '无锡市', level: '市', parent: '江苏省' },
+      { name: '常州市', level: '市', parent: '江苏省' },
+      
+      { name: '浙江省', level: '省', parent: '' },
+      { name: '杭州市', level: '市', parent: '浙江省' },
+      { name: '宁波市', level: '市', parent: '浙江省' },
+      { name: '温州市', level: '市', parent: '浙江省' },
+      
+      { name: '山东省', level: '省', parent: '' },
+      { name: '济南市', level: '市', parent: '山东省' },
+      { name: '青岛市', level: '市', parent: '山东省' },
+      { name: '烟台市', level: '市', parent: '山东省' },
+      
+      { name: '四川省', level: '省', parent: '' },
+      { name: '成都市', level: '市', parent: '四川省' },
+      { name: '绵阳市', level: '市', parent: '四川省' },
+      
+      { name: '湖北省', level: '省', parent: '' },
+      { name: '武汉市', level: '市', parent: '湖北省' },
+      
+      { name: '湖南省', level: '省', parent: '' },
+      { name: '长沙市', level: '市', parent: '湖南省' },
+      
+      { name: '河南省', level: '省', parent: '' },
+      { name: '郑州市', level: '市', parent: '河南省' },
+      
+      { name: '河北省', level: '省', parent: '' },
+      { name: '石家庄市', level: '市', parent: '河北省' },
+      
+      { name: '陕西省', level: '省', parent: '' },
+      { name: '西安市', level: '市', parent: '陕西省' },
+      
+      { name: '福建省', level: '省', parent: '' },
+      { name: '福州市', level: '市', parent: '福建省' },
+      { name: '厦门市', level: '市', parent: '福建省' },
+      
+      { name: '安徽省', level: '省', parent: '' },
+      { name: '合肥市', level: '市', parent: '安徽省' },
+      
+      { name: '江西省', level: '省', parent: '' },
+      { name: '南昌市', level: '市', parent: '江西省' },
+      
+      { name: '辽宁省', level: '省', parent: '' },
+      { name: '沈阳市', level: '市', parent: '辽宁省' },
+      { name: '大连市', level: '市', parent: '辽宁省' }
+    ];
+
+    // 调用和风天气GeoAPI搜索城市
+    async function searchCityAPI(query) {
+      if (!query || query.length < 1) {
+        return [];
+      }
+      
+      // 检查缓存
+      const cacheKey = `search_${query}`;
+      const cached = citySearchCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+        return cached.data;
+      }
+      
+      try {
+        const url = `${QWEATHER_CONFIG.apiHost}${QWEATHER_CONFIG.endpoints.citySearch}?location=${encodeURIComponent(query)}&key=${QWEATHER_CONFIG.apiKey}&range=cn&number=8`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.code === '200' && data.location) {
+          const cities = data.location.map(location => ({
+            id: location.id,
+            name: location.name,
+            fullName: `${location.adm1}${location.adm2 !== location.adm1 ? location.adm2 : ''}${location.name}`,
+            level: location.type === 'city' ? '市' : '区',
+            parent: location.adm1,
+            latitude: parseFloat(location.lat),
+            longitude: parseFloat(location.lon),
+            locationId: location.id
+          }));
+          
+          // 缓存结果
+          citySearchCache.set(cacheKey, {
+            data: cities,
+            timestamp: Date.now()
+          });
+          
+          return cities;
+        } else {
+          console.error('城市搜索API错误:', data);
+          return getLocalCityFallback(query);
+        }
+      } catch (error) {
+        console.error('城市搜索请求失败:', error);
+        // 返回本地备用数据
+        return getLocalCityFallback(query);
+      }
+    }
+
+    // 本地备用城市数据（当API不可用时使用）
+    function getLocalCityFallback(query) {
+      return cityDatabase.filter(city => 
+        city.name.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 8);
+    }
+
+    function searchCity(query) {
+      clearTimeout(searchTimeout);
+      
+      if (!query || query.trim().length < 1) {
+        hideCitySuggestions();
+        return;
+      }
+      
+      searchTimeout = setTimeout(async () => {
+        try {
+          const results = await searchCityAPI(query);
+          showCitySuggestions(results);
+        } catch (error) {
+          console.error('搜索城市失败:', error);
+          // 使用本地数据作为备用
+          const fallbackResults = getLocalCityFallback(query);
+          showCitySuggestions(fallbackResults);
+        }
+      }, 300);
+    }
+
+    function showCitySuggestions(cities) {
+      const suggestionsContainer = document.getElementById('city-suggestions');
+      const suggestionsList = suggestionsContainer.querySelector('.city-suggestions-list');
+      
+      if (cities.length === 0) {
+        hideCitySuggestions();
+        return;
+      }
+      
+      suggestionsList.innerHTML = cities.map(city => {
+        const displayName = city.fullName || city.name;
+        const locationData = JSON.stringify({
+          name: city.name,
+          fullName: displayName,
+          id: city.id || city.locationId,
+          latitude: city.latitude,
+          longitude: city.longitude
+        }).replace(/"/g, '&quot;');
+        
+        return `
+          <div class="city-suggestion-item" onclick="selectCity('${displayName}', '${locationData}')">
+            <div class="text-blue-800 font-medium">${displayName}</div>
+            <div class="text-blue-600 text-sm">${city.level}${city.parent ? ' · ' + city.parent : ''}</div>
+          </div>
+        `;
+      }).join('');
+      
+      suggestionsContainer.style.display = 'block';
+    }
+
+    function hideCitySuggestions() {
+      const suggestionsContainer = document.getElementById('city-suggestions');
+      suggestionsContainer.style.display = 'none';
+    }
+
+    function selectCity(cityName, locationData) {
+      try {
+        const cityInfo = locationData ? JSON.parse(locationData.replace(/&quot;/g, '"')) : { name: cityName };
+        
+        appSettings.currentCity = cityName;
+        appSettings.currentCityInfo = cityInfo;
+        
+        document.getElementById('city-search').value = cityName;
+        
+        // 更新页面显示的城市名称
+        const cityElement = document.querySelector('.current-weather h2');
+        if (cityElement) {
+          cityElement.textContent = cityName;
+        }
+        
+        hideCitySuggestions();
+        
+        // 添加到位置历史记录
+        if (cityInfo && cityInfo.locationId) {
+          addToLocationHistory(cityInfo);
+        }
+        
+        // 这里可以添加获取新城市天气数据的逻辑
+        console.log('已选择城市:', cityName, cityInfo);
+        
+        // 如果有Location ID，可以用于调用和风天气API获取精确天气数据
+        if (cityInfo.locationId) {
+          console.log('Location ID:', cityInfo.locationId);
+          // TODO: 调用和风天气API获取天气数据
+          // fetchWeatherData(cityInfo.locationId);
+        } else if (cityInfo.latitude && cityInfo.longitude) {
+          console.log('城市坐标:', cityInfo.latitude, cityInfo.longitude);
+          // TODO: 使用坐标调用和风天气API
+          // fetchWeatherDataByCoords(cityInfo.latitude, cityInfo.longitude);
+        }
+      } catch (error) {
+        console.error('解析城市信息失败:', error);
+        // 降级处理
+        appSettings.currentCity = cityName;
+        document.getElementById('city-search').value = cityName;
+        hideCitySuggestions();
+      }
+    }
+
+    // 坐标反查缓存
+    const geoLocationCache = new Map();
+
+    // Location ID管理函数
+    function addToLocationHistory(cityInfo) {
+      if (!cityInfo || !cityInfo.locationId) return;
+      
+      // 移除重复项
+      appSettings.locationHistory = appSettings.locationHistory.filter(
+        item => item.locationId !== cityInfo.locationId
+      );
+      
+      // 添加到历史记录开头
+      appSettings.locationHistory.unshift({
+        locationId: cityInfo.locationId,
+        name: cityInfo.name,
+        fullName: cityInfo.fullName,
+        timestamp: Date.now()
+      });
+      
+      // 限制历史记录数量
+      if (appSettings.locationHistory.length > 10) {
+        appSettings.locationHistory = appSettings.locationHistory.slice(0, 10);
+      }
+      
+      console.log('已添加到位置历史:', cityInfo.fullName);
+    }
+
+    function addToFavoriteLocations(cityInfo) {
+      if (!cityInfo || !cityInfo.locationId) return;
+      
+      // 检查是否已收藏
+      const exists = appSettings.favoriteLocations.some(
+        item => item.locationId === cityInfo.locationId
+      );
+      
+      if (!exists) {
+        appSettings.favoriteLocations.push({
+          locationId: cityInfo.locationId,
+          name: cityInfo.name,
+          fullName: cityInfo.fullName,
+          latitude: cityInfo.latitude,
+          longitude: cityInfo.longitude,
+          timestamp: Date.now()
+        });
+        
+        console.log('已添加到收藏位置:', cityInfo.fullName);
+        return true;
+      }
+      
+      return false;
+    }
+
+    function removeFromFavoriteLocations(locationId) {
+      const originalLength = appSettings.favoriteLocations.length;
+      appSettings.favoriteLocations = appSettings.favoriteLocations.filter(
+        item => item.locationId !== locationId
+      );
+      
+      return appSettings.favoriteLocations.length < originalLength;
+    }
+
+    function getLocationById(locationId) {
+      // 先从当前城市信息查找
+      if (appSettings.currentCityInfo && appSettings.currentCityInfo.locationId === locationId) {
+        return appSettings.currentCityInfo;
+      }
+      
+      // 从历史记录查找
+      const historyItem = appSettings.locationHistory.find(item => item.locationId === locationId);
+      if (historyItem) return historyItem;
+      
+      // 从收藏列表查找
+      const favoriteItem = appSettings.favoriteLocations.find(item => item.locationId === locationId);
+      if (favoriteItem) return favoriteItem;
+      
+      return null;
+    }
+
+    // 调用和风天气API进行坐标反查
+    async function reverseGeocode(latitude, longitude) {
+      const cacheKey = `geo_${latitude.toFixed(4)}_${longitude.toFixed(4)}`;
+      const cached = geoLocationCache.get(cacheKey);
+      
+      if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+        return cached.data;
+      }
+      
+      try {
+        const url = `${QWEATHER_CONFIG.apiHost}${QWEATHER_CONFIG.endpoints.geoLocation}?location=${longitude},${latitude}&key=${QWEATHER_CONFIG.apiKey}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.code === '200' && data.location && data.location.length > 0) {
+          const location = data.location[0];
+          const cityInfo = {
+            id: location.id,
+            name: location.name,
+            fullName: `${location.adm1}${location.adm2 !== location.adm1 ? location.adm2 : ''}${location.name}`,
+            level: location.type === 'city' ? 'city' : 'county',
+            parent: location.adm1,
+            latitude: parseFloat(location.lat),
+            longitude: parseFloat(location.lon),
+            locationId: location.id
+          };
+          
+          // 缓存结果
+          geoLocationCache.set(cacheKey, {
+            data: cityInfo,
+            timestamp: Date.now()
+          });
+          
+          return cityInfo;
+        } else {
+          console.error('坐标反查API错误:', data);
+          return null;
+        }
+      } catch (error) {
+        console.error('坐标反查请求失败:', error);
+        return null;
+      }
+    }
+
+    // 获取当前位置
+    function getCurrentLocation() {
+      if (!navigator.geolocation) {
+        alert('您的浏览器不支持地理定位功能');
+        return;
+      }
+      
+      const locationBtn = document.querySelector('.location-btn');
+      locationBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="animate-spin">
+          <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+        </svg>
+      `;
+      
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          try {
+            // 调用和风天气API进行坐标反查
+            const cityInfo = await reverseGeocode(latitude, longitude);
+            
+            if (cityInfo) {
+              // 保存位置信息到应用设置
+              appSettings.currentCity = cityInfo.fullName;
+              appSettings.currentCityInfo = cityInfo;
+              appSettings.currentLocation = { latitude, longitude };
+              
+              // 添加到位置历史记录
+              addToLocationHistory(cityInfo);
+              
+              // 使用selectCity函数更新界面
+              const locationData = JSON.stringify(cityInfo).replace(/"/g, '&quot;');
+              selectCity(cityInfo.fullName, locationData);
+              
+              console.log('定位成功:', { 
+                latitude, 
+                longitude, 
+                city: cityInfo.fullName,
+                locationId: cityInfo.locationId 
+              });
+            } else {
+              // 如果API反查失败，使用坐标作为位置标识
+              const locationName = `位置 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+              appSettings.currentCity = locationName;
+              appSettings.currentLocation = { latitude, longitude };
+              
+              selectCity(locationName);
+              
+              console.log('定位成功（使用坐标）:', { latitude, longitude });
+            }
+            
+            locationBtn.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            `;
+            
+          } catch (error) {
+            console.error('位置解析失败:', error);
+            
+            // 降级处理：使用坐标作为位置标识
+            const locationName = `位置 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+            appSettings.currentCity = locationName;
+            appSettings.currentLocation = { latitude, longitude };
+            
+            selectCity(locationName);
+            
+            locationBtn.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            `;
+          }
+        },
+        (error) => {
+          locationBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          `;
+          
+          let errorMessage = '定位失败';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = '用户拒绝了定位请求，请在浏览器设置中允许位置访问';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = '位置信息不可用';
+              break;
+            case error.TIMEOUT:
+              errorMessage = '定位请求超时';
+              break;
+          }
+          alert(errorMessage);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 300000
+        }
+      );
+    }
+
+    // 初始化城市搜索输入框
+    document.addEventListener('DOMContentLoaded', function() {
+      const citySearchInput = document.getElementById('city-search');
+      if (citySearchInput) {
+        citySearchInput.value = appSettings.currentCity;
+        
+        // 点击输入框外部时隐藏建议列表
+        document.addEventListener('click', function(event) {
+          if (!event.target.closest('#city-search') && !event.target.closest('#city-suggestions')) {
+            hideCitySuggestions();
+          }
+        });
+      }
+    });
+  </script>
+  
+
+</body></html>
