@@ -1,32 +1,41 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * {
+    @apply ease-[cubic-bezier(0.22,0.61,0.36,1)];
+  }
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+@layer utilities {
+  .glass {
+    @apply bg-white/40 backdrop-blur-md;
+  }
+
+  .glass-card {
+    @apply glass rounded-2xl shadow-glass;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent;
+  }
 }
 
-.app-container {
-  text-align: center;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
+@layer components {
+  .weather-card {
+    @apply glass-card p-4 transition-all duration-400;
+    @apply hover:-translate-y-1 hover:shadow-card-hover;
+  }
 
-h1 {
-  color: #2563eb;
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-p {
-  color: #64748b;
+  .app-container {
+    @apply w-[375px] h-[812px] flex flex-col;
+    @apply overflow-hidden rounded-3xl shadow-2xl;
+    background: linear-gradient(180deg, #f0f8ff 0%, #d3e8ff 100%);
+  }
 }
