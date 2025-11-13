@@ -1,10 +1,60 @@
 # 天气鸭项目开发指导 - 阶段3：天气数据集成和API对接
+文档版本: v1.1  
+更新日期: 2025-11-13  
+维护团队: 天气鸭开发团队
 
 ## 📋 阶段概述
 
 本阶段将集成和风天气API，实现天气数据获取、城市搜索和地理定位功能，建立完整的数据层架构。
 
 ---
+
+## 📑 标准章节概述
+
+- 概述: 说明本阶段目标与范围（见“阶段概述”与“核心目标”）
+- 接口定义: 明确所用和风天气 API 与 GeoAPI 端点与版本
+- 请求参数: 环境变量与请求参数列表及校验规则
+- 响应格式: 关键响应结构与类型映射
+- 错误代码: 统一错误码来源与映射策略
+- 示例代码: 可直接落地到项目的 TypeScript/React 代码示例
+
+以上章节均按 `.qoder/rules` 模板术语进行书写（API、端点、参数、响应、错误码、示例）。
+
+## 🔌 接口定义
+
+- 天气数据 API（QWeather v7）
+  - `GET /v7/weather/now`
+  - `GET /v7/weather/7d`
+  - `GET /v7/weather/24h`
+  - `GET /v7/air/now`
+  - `GET /v7/warning/now`
+- 城市 GeoAPI（QWeather v2）
+  - `GET /v2/city/lookup`
+  - `GET /v2/city/top`
+
+版本与 Host 选择遵循 `API_KEY_配置指南.md`，示例使用开发订阅 Host：`https://devapi.qweather.com` 与 `https://geoapi.qweather.com`。
+
+## 🔧 请求参数
+
+- 环境变量（Vite 前缀）：`VITE_QWEATHER_API_KEY`、`VITE_QWEATHER_API_HOST`、`VITE_QWEATHER_GEO_API_HOST`、`VITE_API_TIMEOUT`、`VITE_API_RETRY_TIMES`、`VITE_API_CACHE_DURATION`、`VITE_DEFAULT_CITY_ID`、`VITE_DEFAULT_CITY_NAME`
+- 通用请求参数：`location`（Location ID 或坐标 `lon,lat`）、`key`（API Key）、`lang`、`range`、`number`、`adm`
+- 校验规则：`API Key` 长度 32；`number` 范围 1-20；`range` ∈ {`world`,`cn`,`us`,`eu`}；坐标格式 `lon,lat`
+
+## 📦 响应格式
+
+- 通用响应：`{ code: string, updateTime?: string, fxLink?: string, ... }`
+- 当前天气：`{ now: CurrentWeather }`
+- 7日预报：`{ daily: WeatherForecast[] }`
+- 24小时预报：`{ hourly: HourlyWeather[] }`
+- 城市搜索：`{ location: CityInfo[] }`
+
+类型映射详见“步骤 3.6：创建TypeScript类型定义”。
+
+## ⚠️ 错误代码
+
+- 统一来源：`和风天气错误码.md`
+- 关键码：`401 UNAUTHORIZED`、`403 NO CREDIT`、`429 RATE LIMIT`、`500 UNKNOWN ERROR`；v1 映射：`200` 成功、`204` 无数据、`429` 超过 QPM
+- 文档策略：收到 `429/5xx` 触发退避重试；`401/403/400` 不重试并提示修复配置
 
 ## 🎯 核心目标
 
@@ -162,10 +212,10 @@ VITE_DEFAULT_CITY_ID=101020300
 VITE_DEFAULT_CITY_NAME=上海市宝山区
 ```
 
-**创建实际的 .env 文件**（不提交到Git）:
+**创建实际的 .env 文件**（不提交到Git）：
 
 ```env
-VITE_QWEATHER_API_KEY=6b95a713b2854ca0b5b62ac9d9cca3bb
+VITE_QWEATHER_API_KEY=your_api_key_here
 VITE_QWEATHER_API_HOST=https://devapi.qweather.com
 VITE_QWEATHER_GEO_API_HOST=https://geoapi.qweather.com
 VITE_API_TIMEOUT=10000
@@ -199,12 +249,20 @@ VITE_DEFAULT_CITY_NAME=上海市宝山区
 ```typescript
 /**
  * API配置文件
- * 遵循命名约定：常量使用 UPPER_SNAKE_CASE
+ * 常量使用 UPPER_SNAKE_CASE；含运行时校验与主机规范化
  */
 
-// 和风天气API端点配置
+function normalizeUrl(u: string): string {
+  try {
+    const url = new URL(u);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return u.replace(/\/$/, '');
+  }
+}
+
 export const QWEATHER_API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_QWEATHER_API_HOST || 'https://devapi.qweather.com',
+  BASE_URL: normalizeUrl(import.meta.env.VITE_QWEATHER_API_HOST || 'https://devapi.qweather.com'),
   VERSION: 'v7',
   ENDPOINTS: {
     CURRENT_WEATHER: '/weather/now',
@@ -215,9 +273,8 @@ export const QWEATHER_API_CONFIG = {
   },
 } as const;
 
-// 和风天气GeoAPI配置
 export const QWEATHER_GEO_CONFIG = {
-  BASE_URL: import.meta.env.VITE_QWEATHER_GEO_API_HOST || 'https://geoapi.qweather.com',
+  BASE_URL: normalizeUrl(import.meta.env.VITE_QWEATHER_GEO_API_HOST || 'https://geoapi.qweather.com'),
   VERSION: 'v2',
   ENDPOINTS: {
     CITY_LOOKUP: '/city/lookup',
@@ -227,28 +284,27 @@ export const QWEATHER_GEO_CONFIG = {
   },
 } as const;
 
-// API请求配置
 export const API_REQUEST_CONFIG = {
   API_KEY: import.meta.env.VITE_QWEATHER_API_KEY || '',
-  TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 10000,
-  RETRY_TIMES: Number(import.meta.env.VITE_API_RETRY_TIMES) || 3,
-  CACHE_DURATION: Number(import.meta.env.VITE_API_CACHE_DURATION) || 1800000, // 30分钟
+  TIMEOUT: Math.max(1000, Number(import.meta.env.VITE_API_TIMEOUT) || 10000),
+  RETRY_TIMES: Math.max(1, Number(import.meta.env.VITE_API_RETRY_TIMES) || 3),
+  CACHE_DURATION: Math.max(0, Number(import.meta.env.VITE_API_CACHE_DURATION) || 1800000),
 } as const;
 
-// 默认城市配置
 export const DEFAULT_CITY_CONFIG = {
-  CITY_ID: import.meta.env.VITE_DEFAULT_CITY_ID || '101020300',
-  CITY_NAME: import.meta.env.VITE_DEFAULT_CITY_NAME || '上海市宝山区',
+  CITY_ID: String(import.meta.env.VITE_DEFAULT_CITY_ID || '101020300'),
+  CITY_NAME: String(import.meta.env.VITE_DEFAULT_CITY_NAME || '上海市宝山区'),
 } as const;
 
-// 验证API配置
 export function validateApiConfig(): boolean {
-  if (!API_REQUEST_CONFIG.API_KEY) {
-    console.error('❌ 缺少和风天气API密钥！请在 .env 文件中配置 VITE_QWEATHER_API_KEY');
+  if (!API_REQUEST_CONFIG.API_KEY || API_REQUEST_CONFIG.API_KEY.length !== 32) {
+    console.error('缺少或非法的和风天气 API 密钥');
     return false;
   }
-  
-  console.log('✅ API配置验证通过');
+  if (!QWEATHER_API_CONFIG.BASE_URL.startsWith('https://')) {
+    console.error('API Host 必须使用 HTTPS');
+    return false;
+  }
   return true;
 }
 ```
@@ -380,6 +436,7 @@ export const ERROR_CODES = {
   CITY_NOT_FOUND: 'CITY_NOT_FOUND',
   LOCATION_PERMISSION_DENIED: 'LOCATION_PERMISSION_DENIED',
   LOCATION_UNAVAILABLE: 'LOCATION_UNAVAILABLE',
+  RATE_LIMITED: 'RATE_LIMITED',
 } as const;
 ```
 
@@ -412,12 +469,6 @@ export const ERROR_CODES = {
 import { API_REQUEST_CONFIG } from '@/config/api-config';
 import { ApiError, NetworkError, TimeoutError, ERROR_CODES } from '@/utils/errors';
 
-/**
- * HTTP客户端
- * 实现超时、重试和错误处理机制
- * 遵循安全规范：API安全、超时和限流处理
- */
-
 export interface HttpRequestOptions {
   timeout?: number;
   retries?: number;
@@ -435,10 +486,6 @@ export class HttpClient {
     this.defaultRetries = API_REQUEST_CONFIG.RETRY_TIMES;
   }
 
-  /**
-   * GET 请求
-   * 遵循命名约定：方法名使用 camelCase
-   */
   async get<T>(
     endpoint: string,
     params?: Record<string, string | number>,
@@ -447,13 +494,13 @@ export class HttpClient {
     const url = this.buildUrl(endpoint, params);
     return this.fetchWithRetry<T>(url, {
       method: 'GET',
-      headers: options?.headers,
+      headers: {
+        Accept: 'application/json',
+        ...options?.headers,
+      },
     }, options);
   }
 
-  /**
-   * POST 请求
-   */
   async post<T>(
     endpoint: string,
     data?: any,
@@ -464,16 +511,13 @@ export class HttpClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
         ...options?.headers,
       },
       body: JSON.stringify(data),
     }, options);
   }
 
-  /**
-   * 带重试的fetch请求
-   * 实现指数退避策略
-   */
   private async fetchWithRetry<T>(
     url: string,
     init: RequestInit,
@@ -481,25 +525,24 @@ export class HttpClient {
   ): Promise<T> {
     const maxRetries = options?.retries ?? this.defaultRetries;
     const timeout = options?.timeout ?? this.defaultTimeout;
-    
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         const response = await this.fetchWithTimeout(url, init, timeout);
+        if (response.status === 429 || response.status >= 500) {
+          throw new ApiError('服务繁忙或达到限流', ERROR_CODES.RATE_LIMITED, response.status);
+        }
         return await this.handleResponse<T>(response);
       } catch (error) {
         lastError = error as Error;
-        
-        // 如果不是最后一次尝试，等待后重试
-        if (attempt < maxRetries - 1) {
-          const delay = this.calculateBackoffDelay(attempt);
-          console.warn(`请求失败，${delay}ms后进行第 ${attempt + 2} 次重试...`);
-          await this.sleep(delay);
-        }
+        const isLast = attempt >= maxRetries - 1;
+        if (isLast) break;
+        const delay = this.calculateBackoffDelay(attempt);
+        await this.sleep(delay);
       }
     }
-    
+
     throw new ApiError(
       `请求失败，已重试 ${maxRetries} 次`,
       ERROR_CODES.API_REQUEST_FAILED,
@@ -508,9 +551,6 @@ export class HttpClient {
     );
   }
 
-  /**
-   * 带超时的fetch请求
-   */
   private async fetchWithTimeout(
     url: string,
     init: RequestInit,
@@ -518,13 +558,8 @@ export class HttpClient {
   ): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
     try {
-      const response = await fetch(url, {
-        ...init,
-        signal: controller.signal,
-      });
-      
+      const response = await fetch(url, { ...init, signal: controller.signal });
       return response;
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -536,9 +571,6 @@ export class HttpClient {
     }
   }
 
-  /**
-   * 处理响应
-   */
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       throw new ApiError(
@@ -547,47 +579,34 @@ export class HttpClient {
         response.status
       );
     }
-    
     try {
       const data = await response.json();
       return data as T;
-    } catch (error) {
-      throw new ApiError(
-        '响应数据解析失败',
-        ERROR_CODES.API_RESPONSE_INVALID
-      );
+    } catch {
+      throw new ApiError('响应数据解析失败', ERROR_CODES.API_RESPONSE_INVALID);
     }
   }
 
-  /**
-   * 构建URL
-   */
   private buildUrl(
     endpoint: string,
     params?: Record<string, string | number>
   ): string {
     const url = new URL(endpoint, this.baseURL);
-    
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, String(value));
+        url.searchParams.set(key, String(value));
       });
     }
-    
     return url.toString();
   }
 
-  /**
-   * 计算指数退避延迟
-   */
   private calculateBackoffDelay(attempt: number): number {
-    const baseDelay = 1000; // 1秒
-    return baseDelay * Math.pow(2, attempt);
+    const base = 1000;
+    const exp = base * Math.pow(2, attempt);
+    const jitter = Math.floor(Math.random() * 250);
+    return Math.min(exp + jitter, 60000);
   }
 
-  /**
-   * 延迟函数
-   */
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -909,17 +928,9 @@ export interface GeoLocation {
 import { HttpClient } from './http-client';
 import { CacheManager } from '@/utils/cache-manager';
 import { QWEATHER_API_CONFIG, API_REQUEST_CONFIG } from '@/config/api-config';
-import type {
-  QWeatherResponse,
-  CurrentWeather,
-  WeatherForecast,
-  HourlyWeather,
-} from '@/types/weather';
+import { ApiError, ERROR_CODES } from '@/utils/errors';
+import type { QWeatherResponse, CurrentWeather, WeatherForecast, HourlyWeather } from '@/types/weather';
 
-/**
- * 天气服务类
- * 遵循命名约定：类名使用 PascalCase，方法名使用 camelCase
- */
 export class WeatherService {
   private httpClient: HttpClient;
   private cacheManager: CacheManager;
@@ -929,126 +940,80 @@ export class WeatherService {
     this.cacheManager = new CacheManager(API_REQUEST_CONFIG.CACHE_DURATION);
   }
 
-  /**
-   * 获取当前天气
-   * 遵循安全规范：使用HTTPS，设置超时
-   */
-  async getCurrentWeather(
-    locationId: string,
-    forceRefresh: boolean = false
-  ): Promise<CurrentWeather> {
+  async getCurrentWeather(locationId: string, forceRefresh: boolean = false): Promise<CurrentWeather> {
     const cacheKey = `current_weather_${locationId}`;
-    
-    // 检查缓存
     if (!forceRefresh) {
       const cached = this.cacheManager.get<CurrentWeather>(cacheKey);
-      if (cached) {
-        console.log('从缓存获取当前天气数据');
-        return cached;
-      }
+      if (cached) return cached;
     }
-    
-    // 调用API
+
     const response = await this.httpClient.get<QWeatherResponse<any>>(
       `${QWEATHER_API_CONFIG.VERSION}${QWEATHER_API_CONFIG.ENDPOINTS.CURRENT_WEATHER}`,
-      {
-        location: locationId,
-        key: API_REQUEST_CONFIG.API_KEY,
-      }
+      { location: locationId, key: API_REQUEST_CONFIG.API_KEY }
     );
-    
-    if (response.code !== '200') {
-      throw new Error(`API错误: ${response.code}`);
+
+    if (response.code === '204') {
+      throw new ApiError('当前无数据', ERROR_CODES.DATA_NOT_FOUND);
     }
-    
+    if (response.code !== '200') {
+      throw new ApiError(`API错误: ${response.code}`, ERROR_CODES.API_REQUEST_FAILED);
+    }
+
     const weatherData = response.now as CurrentWeather;
-    
-    // 缓存数据（30分钟）
     this.cacheManager.set(cacheKey, weatherData, 30 * 60 * 1000);
-    
     return weatherData;
   }
 
-  /**
-   * 获取7天天气预报
-   */
-  async getWeatherForecast(
-    locationId: string,
-    forceRefresh: boolean = false
-  ): Promise<WeatherForecast[]> {
+  async getWeatherForecast(locationId: string, forceRefresh: boolean = false): Promise<WeatherForecast[]> {
     const cacheKey = `forecast_7d_${locationId}`;
-    
     if (!forceRefresh) {
       const cached = this.cacheManager.get<WeatherForecast[]>(cacheKey);
-      if (cached) {
-        console.log('从缓存获取天气预报数据');
-        return cached;
-      }
+      if (cached) return cached;
     }
-    
+
     const response = await this.httpClient.get<QWeatherResponse<any>>(
       `${QWEATHER_API_CONFIG.VERSION}${QWEATHER_API_CONFIG.ENDPOINTS.FORECAST_7D}`,
-      {
-        location: locationId,
-        key: API_REQUEST_CONFIG.API_KEY,
-      }
+      { location: locationId, key: API_REQUEST_CONFIG.API_KEY }
     );
-    
-    if (response.code !== '200') {
-      throw new Error(`API错误: ${response.code}`);
+
+    if (response.code === '204') {
+      throw new ApiError('预报无数据', ERROR_CODES.DATA_NOT_FOUND);
     }
-    
+    if (response.code !== '200') {
+      throw new ApiError(`API错误: ${response.code}`, ERROR_CODES.API_REQUEST_FAILED);
+    }
+
     const forecastData = response.daily as WeatherForecast[];
-    
-    // 缓存数据（2小时）
     this.cacheManager.set(cacheKey, forecastData, 2 * 60 * 60 * 1000);
-    
     return forecastData;
   }
 
-  /**
-   * 获取24小时逐小时预报
-   */
-  async getHourlyForecast(
-    locationId: string,
-    forceRefresh: boolean = false
-  ): Promise<HourlyWeather[]> {
+  async getHourlyForecast(locationId: string, forceRefresh: boolean = false): Promise<HourlyWeather[]> {
     const cacheKey = `forecast_24h_${locationId}`;
-    
     if (!forceRefresh) {
       const cached = this.cacheManager.get<HourlyWeather[]>(cacheKey);
-      if (cached) {
-        console.log('从缓存获取逐小时预报数据');
-        return cached;
-      }
+      if (cached) return cached;
     }
-    
+
     const response = await this.httpClient.get<QWeatherResponse<any>>(
       `${QWEATHER_API_CONFIG.VERSION}${QWEATHER_API_CONFIG.ENDPOINTS.FORECAST_24H}`,
-      {
-        location: locationId,
-        key: API_REQUEST_CONFIG.API_KEY,
-      }
+      { location: locationId, key: API_REQUEST_CONFIG.API_KEY }
     );
-    
-    if (response.code !== '200') {
-      throw new Error(`API错误: ${response.code}`);
+
+    if (response.code === '204') {
+      throw new ApiError('逐小时无数据', ERROR_CODES.DATA_NOT_FOUND);
     }
-    
+    if (response.code !== '200') {
+      throw new ApiError(`API错误: ${response.code}`, ERROR_CODES.API_REQUEST_FAILED);
+    }
+
     const hourlyData = response.hourly as HourlyWeather[];
-    
-    // 缓存数据（1小时）
     this.cacheManager.set(cacheKey, hourlyData, 60 * 60 * 1000);
-    
     return hourlyData;
   }
 
-  /**
-   * 清除缓存
-   */
   clearCache(): void {
     this.cacheManager.clear();
-    console.log('天气数据缓存已清除');
   }
 }
 ```
@@ -1117,7 +1082,16 @@ export class WeatherService {
 ---
 
 **文档版本**: v1.0  
-**更新日期**: 2024-01-01  
+**更新日期**: 2025-11-13  
 **维护团队**: 天气鸭开发团队
 
 *注:由于文档较长,步骤3.8-3.12 和完整的验收清单请见文档下一部分*
+
+## 🗂 修订历史
+
+- v1.1 (2025-11-13):
+  - 补齐标准章节（接口定义、请求参数、响应格式、错误代码、示例代码）
+  - 优化 `api-config.ts` 运行时校验与主机规范化
+  - 强化 `http-client.ts` 退避重试（含抖动与限流判定）
+  - 使用统一 `ApiError` 处理 `WeatherService` 的非 200/204 情况
+  - 移除示例 `.env` 中的真实密钥，改为占位符，符合安全规范

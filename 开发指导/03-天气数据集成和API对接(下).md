@@ -1,10 +1,23 @@
 # 天气鸭项目开发指导 - 阶段3：天气数据集成和API对接(下)
+文档版本: v1.1  
+更新日期: 2025-11-13  
+维护团队: 天气鸭开发团队
 
 ## 📋 继续步骤
 
 本文档接续《03-天气数据集成和API对接(上).md》
 
 ---
+
+## 📑 标准章节补充
+
+- 接口定义（GeoAPI v2）
+  - `GET /v2/city/lookup`（关键词与坐标查询）
+  - `GET /v2/city/top`（热门城市）
+- 请求参数：`location`、`adm`、`range`、`number(1-20)`、`lang`、`key`
+- 响应格式：`{ code: string, location?: CityInfo[], topCityList?: CityInfo[] }`
+- 错误代码：参考《和风天气错误码.md》，`429/5xx` 退避重试；`400/401/403` 直接失败
+- 示例代码：详见本页 `CityService`、`GeolocationService` 与测试页面示例
 
 ### 步骤 3.8：创建城市服务
 
@@ -48,7 +61,12 @@ export class CityService {
    * 遵循命名约定：方法名使用 camelCase，动词开头
    */
   async searchCities(params: CitySearchParams): Promise<CityInfo[]> {
-    const cacheKey = `city_search_${params.location}_${params.adm || ''}`;
+    const query = (params.location || '').trim();
+    if (!query) {
+      throw new ApiError('搜索关键词为空', ERROR_CODES.DATA_INVALID);
+    }
+    const number = Math.min(20, Math.max(1, params.number || 10));
+    const cacheKey = `city_search_${query}_${params.adm || ''}_${number}`;
     
     // 检查缓存
     const cached = this.cacheManager.get<CityInfo[]>(cacheKey);
@@ -61,15 +79,18 @@ export class CityService {
     const response = await this.httpClient.get<QWeatherResponse<any>>(
       `${QWEATHER_GEO_CONFIG.VERSION}${QWEATHER_GEO_CONFIG.ENDPOINTS.CITY_LOOKUP}`,
       {
-        location: params.location,
+        location: encodeURIComponent(query),
         key: API_REQUEST_CONFIG.API_KEY,
         adm: params.adm,
         range: params.range || 'cn',
-        number: params.number || 10,
+        number,
         lang: params.lang || 'zh',
       }
     );
     
+    if (response.code === '204') {
+      throw new ApiError('搜索无结果', ERROR_CODES.CITY_NOT_FOUND);
+    }
     if (response.code !== '200') {
       throw new ApiError(
         `城市搜索失败: ${response.code}`,
@@ -101,7 +122,8 @@ export class CityService {
     range: 'world' | 'cn' = 'cn',
     number: number = 20
   ): Promise<CityInfo[]> {
-    const cacheKey = `top_cities_${range}_${number}`;
+    const count = Math.min(20, Math.max(1, number));
+    const cacheKey = `top_cities_${range}_${count}`;
     
     const cached = this.cacheManager.get<CityInfo[]>(cacheKey);
     if (cached) {
@@ -111,14 +133,15 @@ export class CityService {
     
     const response = await this.httpClient.get<QWeatherResponse<any>>(
       `${QWEATHER_GEO_CONFIG.VERSION}${QWEATHER_GEO_CONFIG.ENDPOINTS.CITY_TOP}`,
-      {
-        key: API_REQUEST_CONFIG.API_KEY,
-        range,
-        number,
-        lang: 'zh',
-      }
+      { key: API_REQUEST_CONFIG.API_KEY, range, number: count, lang: 'zh' }
     );
     
+    if (response.code === '204') {
+      throw new ApiError(
+        '热门城市无数据',
+        ERROR_CODES.DATA_NOT_FOUND
+      );
+    }
     if (response.code !== '200') {
       throw new ApiError(
         `获取热门城市失败: ${response.code}`,
@@ -156,6 +179,12 @@ export class CityService {
       }
     );
     
+    if (response.code === '204') {
+      throw new ApiError(
+        '坐标查询无数据',
+        ERROR_CODES.CITY_NOT_FOUND
+      );
+    }
     if (response.code !== '200') {
       throw new ApiError(
         `根据坐标查询城市失败: ${response.code}`,
@@ -244,7 +273,7 @@ export class GeolocationService {
    */
   async getCurrentPosition(): Promise<GeoLocation> {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
+      if (!('geolocation' in navigator)) {
         reject(new ApiError(
           '浏览器不支持地理定位功能',
           ERROR_CODES.LOCATION_UNAVAILABLE
@@ -921,6 +950,12 @@ weatherService.clearCache();
 
 ---
 
-**文档版本**: v1.0  
-**更新日期**: 2024-01-01  
+**文档版本**: v1.1  
+**更新日期**: 2025-11-13  
 **维护团队**: 天气鸭开发团队
+
+## 🗂 修订历史
+
+- v1.1 (2025-11-13):
+  - 补充标准章节索引并聚焦 GeoAPI 端点
+  - 统一版本信息与日期，便于自动化校验
