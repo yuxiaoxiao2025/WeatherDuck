@@ -36,6 +36,8 @@
   .app-container {
     @apply w-[375px] h-[812px] flex flex-col;
     @apply overflow-hidden rounded-3xl shadow-2xl;
+    @apply md:w-[420px] md:h-auto;
+    @apply dark:bg-gray-900;
     background: linear-gradient(180deg, #f0f8ff 0%, #d3e8ff 100%);
   }
 }

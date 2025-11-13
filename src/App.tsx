@@ -3,6 +3,7 @@ import { AppContainer, Header } from '@/components/Layout'
 import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Icon } from '@/components/Icon'
+import { ANIMATION_DURATION } from '@/constants/design-tokens'
 
 function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -11,7 +12,7 @@ function App() {
     setIsRefreshing(true)
     setTimeout(() => {
       setIsRefreshing(false)
-    }, 1000)
+    }, ANIMATION_DURATION.VERY_SLOW)
   }
 
   const handleSettings = () => {}
@@ -29,7 +30,7 @@ function App() {
             <Button variant="ghost" type="button">幽灵按钮</Button>
           </div>
         </Card>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Card hoverable>
             <div className="text-center">
               <Icon name="Droplets" size={32} color="#3b82f6" />
