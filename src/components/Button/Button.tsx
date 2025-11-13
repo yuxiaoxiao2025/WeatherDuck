@@ -21,7 +21,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   type = 'button',
   ...props
 }, ref) => {
-  const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-all'
+  const baseStyles = 'inline-flex items-center justify-center rounded-lg rounded-token-lg font-medium transition-all'
   const variantStyles = {
     primary: 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700',
     secondary: 'bg-white/20 backdrop-blur text-blue-900 hover:bg-white/30',
@@ -64,4 +64,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
 })
 
 Button.displayName = 'Button'
-

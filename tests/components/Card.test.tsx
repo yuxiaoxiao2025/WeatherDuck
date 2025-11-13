@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import { Card } from './Card'
+import { Card } from '@/components/Card'
 
 describe('Card', () => {
   it('renders with glass variant by default', () => {
@@ -13,4 +13,3 @@ describe('Card', () => {
     expect(container.firstChild).toHaveClass('hover:-translate-y-1')
   })
 })
-

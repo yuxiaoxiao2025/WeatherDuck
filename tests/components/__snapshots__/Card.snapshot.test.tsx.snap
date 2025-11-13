@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Card snapshot > default glass variant 1`] = `
+<div
+  class="rounded-2xl rounded-token-lg transition-all duration-300 bg-white/40 backdrop-blur-md shadow-glass p-4 hover:-translate-y-1 hover:shadow-card-hover cursor-pointer"
+>
+  snapshot
+</div>
+`;

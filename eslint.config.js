@@ -4,6 +4,7 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettierConfig from 'eslint-config-prettier';
+import * as tokenRules from './tools/eslint-rules/token-usage.js';
 
 export default [
   js.configs.recommended,
@@ -33,6 +34,7 @@ export default [
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
       '@typescript-eslint': tsPlugin,
+      token: tokenRules,
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
@@ -42,6 +44,8 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-undef': 'off',
+      'token/no-raw-radius': 'warn',
+      'token/no-raw-shadow': 'warn',
     },
     settings: {
       react: {

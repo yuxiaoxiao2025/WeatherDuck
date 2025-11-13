@@ -15,7 +15,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(({
   children,
   ...props
 }, ref) => {
-  const baseStyles = 'rounded-2xl transition-all duration-300'
+  const baseStyles = 'rounded-2xl rounded-token-lg transition-all duration-300'
   const variantStyles = {
     default: 'bg-white shadow-card',
     glass: 'bg-white/40 backdrop-blur-md shadow-glass',
@@ -50,4 +50,3 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(({
 })
 
 Card.displayName = 'Card'
-

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Button } from './Button'
+import { Button } from '@/components/Button'
 
 describe('Button', () => {
   it('should render button with text', () => {
@@ -30,4 +30,3 @@ describe('Button', () => {
     expect(screen.getByRole('status')).toBeInTheDocument()
   })
 })
-

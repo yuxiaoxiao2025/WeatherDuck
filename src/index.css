@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --SPACING_MD: 16px;
+    --RADIUS_LG: 16px;
+    --SHADOW_CARD: 0 4px 12px rgba(6, 132, 255, 0.08);
+    --SHADOW_CARD_HOVER: 0 8px 22px rgba(6, 132, 255, 0.18);
+  }
   body {
     @apply font-sans antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -14,6 +20,10 @@
 }
 
 @layer utilities {
+  .p-token-md { padding: var(--SPACING_MD); }
+  .rounded-token-lg { border-radius: var(--RADIUS_LG); }
+  .shadow-token-card { box-shadow: var(--SHADOW_CARD); }
+  .shadow-token-card-hover { box-shadow: var(--SHADOW_CARD_HOVER); }
   .glass {
     @apply bg-white/40 backdrop-blur-md;
   }
@@ -30,7 +40,11 @@
 @layer components {
   .weather-card {
     @apply glass-card p-4 transition-all duration-400;
-    @apply hover:-translate-y-1 hover:shadow-card-hover;
+    @apply hover:-translate-y-1;
+    box-shadow: var(--SHADOW_CARD);
+  }
+  .weather-card:hover {
+    box-shadow: var(--SHADOW_CARD_HOVER);
   }
 
   .app-container {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import { Icon } from './Icon'
+import { Icon } from '@/components/Icon'
 
 describe('Icon', () => {
   it('renders lucide icon and is aria-hidden', () => {

@@ -4,6 +4,7 @@ import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Icon } from '@/components/Icon'
 import { ANIMATION_DURATION } from '@/constants/design-tokens'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -21,6 +22,9 @@ function App() {
     <AppContainer>
       <Header onRefresh={handleRefresh} onSettings={handleSettings} />
       <main className="flex-1 overflow-y-auto p-5" aria-live="polite">
+        <div className="mb-4">
+          <ThemeToggle initial="system" />
+        </div>
         <Card variant="glass" className="mb-5">
           <h2 className="text-xl font-bold text-blue-900 mb-2">UI 框架搭建完成</h2>
           <p className="text-blue-600 mb-4">Tailwind CSS 和基础组件库已就绪</p>
